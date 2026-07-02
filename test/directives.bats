@@ -77,7 +77,8 @@ EOF
 @test "directives preserves multiline scripts from block comments" {
   cat > "$BATS_TEST_TMPDIR/sample.js" <<'EOF_JS'
 /*
-!let name = "Or"
+!
+let name = "Or"
 $"hello ($name)"
 */
 EOF_JS
@@ -91,7 +92,8 @@ EOF_JS
 @test "directives preserves multiline scripts from Markdown comments" {
   cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF_MD'
 <!--
-o!let rows = [1 2 3]
+o!
+let rows = [1 2 3]
 $rows | length
 -->
 EOF_MD
@@ -101,4 +103,16 @@ EOF_MD
   [ "$(printf '%s\n' "$output" | jq -r '.flags')" = "o" ]
   expected=$'let rows = [1 2 3]\n$rows | length'
   [ "$(printf '%s\n' "$output" | jq -r '.script')" = "$expected" ]
+}
+
+@test "directives do not combine adjacent single-line comments into multiline scripts" {
+  cat > "$BATS_TEST_TMPDIR/sample.js" <<'EOF_JS'
+// !let rows = [1 2 3]
+// $rows | length
+EOF_JS
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments directives sample.js
+  [ "$status" -eq 0 ]
+  [ "$(printf '%s\n' "$output" | jq -s 'length')" = "1" ]
+  [ "$(printf '%s\n' "$output" | jq -r '.script')" = "let rows = [1 2 3]" ]
 }
