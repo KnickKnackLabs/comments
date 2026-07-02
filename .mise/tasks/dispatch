@@ -6,7 +6,7 @@
 
 use ../../lib/comments/extract.nu [extract-comments resolve-target]
 use ../../lib/comments/directives.nu directive-from-comment
-use ../../lib/comments/dispatch.nu [context-for-directive run-directive unsupported-flags]
+use ../../lib/comments/dispatch.nu [apply-replacements context-for-directive directive-writes-output replacement-for-directive run-directive unsupported-flags]
 
 let file = $env.usage_file
 let base = ($env.COMMENTS_CALLER_PWD? | default $env.PWD)
@@ -24,25 +24,57 @@ let directives = (
   | where {|directive| $directive != null }
 )
 
+mut replacements = []
+mut outputs = []
+mut failures = []
+
 for directive in $directives {
   let unsupported = (unsupported-flags $directive)
   if (($unsupported | length) > 0) {
-    print -e $"comments dispatch: unsupported directive flags: ($unsupported | str join '')"
-    exit 1
+    $failures = ($failures | append {
+      directive: $directive,
+      status: 1,
+      stderr: $"comments dispatch: unsupported directive flags: ($unsupported | str join '')\n",
+    })
+    continue
   }
 
   let context = (context-for-directive $target $directive)
   let result = (run-directive $context)
 
-  if ($result.stdout | is-not-empty) {
-    print -n $result.stdout
+  if ($result.exit_code == 0) {
+    if (directive-writes-output $directive) {
+      $replacements = ($replacements | append (replacement-for-directive $directive $result.stdout))
+    } else if ($result.stdout | is-not-empty) {
+      $outputs = ($outputs | append $result.stdout)
+    }
+
+    if ($result.stderr | is-not-empty) {
+      print -e -n $result.stderr
+    }
+  } else {
+    $failures = ($failures | append {
+      directive: $directive,
+      status: $result.exit_code,
+      stderr: $result.stderr,
+    })
+  }
+}
+
+for output in $outputs {
+  print -n $output
+}
+
+if (($replacements | length) > 0) {
+  apply-replacements $target $replacements
+}
+
+if (($failures | length) > 0) {
+  for failure in $failures {
+    if ($failure.stderr | is-not-empty) {
+      print -e -n $failure.stderr
+    }
   }
 
-  if ($result.stderr | is-not-empty) {
-    print -e -n $result.stderr
-  }
-
-  if ($result.exit_code != 0) {
-    exit $result.exit_code
-  }
+  exit ($failures | get status | math max)
 }
