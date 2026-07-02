@@ -13,3 +13,21 @@ load test_helper
   [ "$status" -eq 0 ]
   [ "$output" = "keep  keep" ]
 }
+
+@test "apply-replacements-to-content removes a standalone empty-output line" {
+  run comments_nu 'use ./lib/comments/dispatch.nu apply-replacements-to-content; let replacements = [{start: 2, end: 7, output: ""}]; apply-replacements-to-content "1\nABCDE\n3\n" $replacements'
+  [ "$status" -eq 0 ]
+  [ "$output" = $'1\n3' ]
+}
+
+@test "apply-replacements-to-content removes an indented standalone empty-output line" {
+  run comments_nu 'use ./lib/comments/dispatch.nu apply-replacements-to-content; let replacements = [{start: 4, end: 9, output: ""}]; apply-replacements-to-content "1\n  ABCDE\n3\n" $replacements'
+  [ "$status" -eq 0 ]
+  [ "$output" = $'1\n3' ]
+}
+
+@test "apply-replacements-to-content preserves inline empty-output replacement behavior" {
+  run comments_nu 'use ./lib/comments/dispatch.nu apply-replacements-to-content; let replacements = [{start: 2, end: 7, output: ""}]; apply-replacements-to-content "1 ABCDE 3\n" $replacements'
+  [ "$status" -eq 0 ]
+  [ "$output" = "1  3" ]
+}

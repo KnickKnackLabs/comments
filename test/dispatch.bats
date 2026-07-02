@@ -27,7 +27,7 @@ EOF
   [ "$output" = "$expected" ]
 }
 
-@test "dispatch consumes a single non-output directive" {
+@test "dispatch consumes a standalone Markdown directive line" {
   cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
 before
 <!-- !$"hello" -->
@@ -39,6 +39,46 @@ EOF
   [ -z "$output" ]
   expected=$'before\nafter'
   [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "$expected" ]
+}
+
+@test "dispatch consumes a standalone JavaScript line directive line" {
+  cat > "$BATS_TEST_TMPDIR/sample.js" <<'EOF'
+before()
+// !$"hello"
+after()
+EOF
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch sample.js
+  [ "$status" -eq 0 ]
+  expected=$'before()\nafter()'
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.js")" = "$expected" ]
+}
+
+@test "dispatch consumes an indented standalone JavaScript line directive line" {
+  cat > "$BATS_TEST_TMPDIR/sample.js" <<'EOF'
+function demo() {
+  // !$"hello"
+  return 1
+}
+EOF
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch sample.js
+  [ "$status" -eq 0 ]
+  expected=$'function demo() {\n  return 1\n}'
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.js")" = "$expected" ]
+}
+
+@test "dispatch consumes a standalone block directive line" {
+  cat > "$BATS_TEST_TMPDIR/sample.js" <<'EOF'
+before()
+/* !"hello" */
+after()
+EOF
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch sample.js
+  [ "$status" -eq 0 ]
+  expected=$'before()\nafter()'
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.js")" = "$expected" ]
 }
 
 @test "dispatch consumes multiple non-output directives" {
