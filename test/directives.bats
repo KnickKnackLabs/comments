@@ -68,6 +68,17 @@ EOF
   [ -z "$output" ]
 }
 
+@test "directives ignores prose comments containing bangs" {
+  cat > "$BATS_TEST_TMPDIR/sample.js" <<'EOF'
+// TODO! do not parse this as a directive
+console.log('x')
+EOF
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments directives sample.js
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+}
+
 @test "directives preserves extraction errors" {
   COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments directives missing.md
   [ "$status" -ne 0 ]

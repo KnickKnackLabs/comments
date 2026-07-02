@@ -7,7 +7,7 @@
 Turn comments into explicit, user-triggered commands.
 
 ![shape: mise + BATS](https://img.shields.io/badge/shape-mise%20%2B%20BATS-4EAA25?style=flat&logo=gnubash&logoColor=white)
-[![tests: 65](https://img.shields.io/badge/tests-65-brightgreen?style=flat)](test/)
+[![tests: 70](https://img.shields.io/badge/tests-70-brightgreen?style=flat)](test/)
 ![lints: 9](https://img.shields.io/badge/lints-9-blue?style=flat)
 ![README: TSX](https://img.shields.io/badge/README-TSX-f472b6?style=flat)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat)](LICENSE)
@@ -70,7 +70,7 @@ codebase pre-commit
 
 ## Usage
 
-A directive is a source comment whose normalized body starts with `<flags>!` followed by a Nushell script.
+A directive is a source comment whose normalized body starts with `!` or a known flag sequence such as `o!` followed by a Nushell script. Prose comments like `TODO!` are ignored.
 
 ```md
 <!-- !$"run and consume me" -->
@@ -98,6 +98,7 @@ comments dispatch --stdout notes.md
 
 - `!script` runs the script and consumes the directive comment.
 - `o!script` runs the script and replaces the directive comment with stdout.
+- `o` is currently the only supported public flag; recognized but unsupported flags fail without consuming the directive.
 - Failed directives remain unchanged.
 - Successful directives are consumed/replaced even if another directive fails.
 - `--stdout` executes directives but prints the transformed file instead of modifying it.
@@ -158,7 +159,7 @@ readme build --check
 git diff --check
 ```
 
-The starter suite currently has **65 tests** and **3 public tasks**. Those numbers are read from the repo at README build time.
+The starter suite currently has **70 tests** and **3 public tasks**. Those numbers are read from the repo at README build time.
 
 <div align="center">
 

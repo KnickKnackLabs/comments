@@ -27,7 +27,7 @@ export def normalize-comment [text: string] {
 }
 
 export def parse-directive [body: string] {
-  let parsed = ($body | parse --regex '^(?<flags>[^!\s]*)!(?<script>[\s\S]*)$')
+  let parsed = ($body | parse --regex '^(?<flags>[oi]*)!(?<script>[\s\S]*)$')
   if (($parsed | length) == 0) {
     null
   } else {

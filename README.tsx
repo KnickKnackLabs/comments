@@ -259,8 +259,12 @@ codebase pre-commit`}</CodeBlock>
     <Section title="Usage">
       <Paragraph>
         {"A directive is a source comment whose normalized body starts with "}
-        <Code>{"<flags>!"}</Code>
-        {" followed by a Nushell script."}
+        <Code>!</Code>
+        {" or a known flag sequence such as "}
+        <Code>o!</Code>
+        {" followed by a Nushell script. Prose comments like "}
+        <Code>TODO!</Code>
+        {" are ignored."}
       </Paragraph>
 
       <CodeBlock lang="md">{`<!-- !$"run and consume me" -->
@@ -288,6 +292,7 @@ $rows | length
       <List>
         <Item><Code>!script</Code> runs the script and consumes the directive comment.</Item>
         <Item><Code>o!script</Code> runs the script and replaces the directive comment with stdout.</Item>
+        <Item><Code>o</Code> is currently the only supported public flag; recognized but unsupported flags fail without consuming the directive.</Item>
         <Item>Failed directives remain unchanged.</Item>
         <Item>Successful directives are consumed/replaced even if another directive fails.</Item>
         <Item><Code>--stdout</Code> executes directives but prints the transformed file instead of modifying it.</Item>

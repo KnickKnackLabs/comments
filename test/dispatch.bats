@@ -14,6 +14,19 @@ EOF
   [ -z "$output" ]
 }
 
+@test "dispatch ignores prose comments containing bangs" {
+  cat > "$BATS_TEST_TMPDIR/sample.js" <<'EOF'
+// TODO! do not parse this as a directive
+console.log('x')
+EOF
+  original="$(cat "$BATS_TEST_TMPDIR/sample.js")"
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch sample.js
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.js")" = "$original" ]
+}
+
 @test "dispatch --stdout prints unchanged content when file has no directives" {
   cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
 # Title

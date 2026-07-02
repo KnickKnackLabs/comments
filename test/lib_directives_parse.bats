@@ -50,3 +50,22 @@ load test_helper
   [ "$status" -eq 0 ]
   [ "$output" = "null" ]
 }
+
+@test "parse-directive rejects prose before bang" {
+  run comments_nu 'use ./lib/comments/directives.nu parse-directive; parse-directive "TODO! fix this" | to json -r'
+  [ "$status" -eq 0 ]
+  [ "$output" = "null" ]
+}
+
+@test "parse-directive rejects lowercase prose before bang" {
+  run comments_nu 'use ./lib/comments/directives.nu parse-directive; parse-directive "todo! fix this" | to json -r'
+  [ "$status" -eq 0 ]
+  [ "$output" = "null" ]
+}
+
+@test "parse-directive recognizes reserved flags before dispatch support" {
+  run comments_nu 'use ./lib/comments/directives.nu parse-directive; parse-directive "oi!echo hi" | to json -r'
+  [ "$status" -eq 0 ]
+  [ "$(printf '%s\n' "$output" | jq -r '.flags')" = "oi" ]
+  [ "$(printf '%s\n' "$output" | jq -r '.flag_list | join(",")')" = "o,i" ]
+}
