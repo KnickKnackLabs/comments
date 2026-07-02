@@ -1,0 +1,48 @@
+#!/usr/bin/env nu
+#MISE description="Dispatch comment directives in a file"
+#MISE dir="{{config_root}}"
+#USAGE arg "file" help="File whose directives should be dispatched"
+#USAGE example "mise run dispatch README.md" header="Dispatch directives in a file"
+
+use ../../lib/comments/extract.nu [extract-comments resolve-target]
+use ../../lib/comments/directives.nu directive-from-comment
+use ../../lib/comments/dispatch.nu [context-for-directive run-directive unsupported-flags]
+
+let file = $env.usage_file
+let base = ($env.COMMENTS_CALLER_PWD? | default $env.PWD)
+let target = (resolve-target $file $base)
+
+if (($target | path type) != "file") {
+  print -e $"comments dispatch: file not found: ($file)"
+  exit 1
+}
+
+let comments = (extract-comments $target)
+let directives = (
+  $comments
+  | each {|comment| directive-from-comment $comment }
+  | where {|directive| $directive != null }
+)
+
+for directive in $directives {
+  let unsupported = (unsupported-flags $directive)
+  if (($unsupported | length) > 0) {
+    print -e $"comments dispatch: unsupported directive flags: ($unsupported | str join '')"
+    exit 1
+  }
+
+  let context = (context-for-directive $target $directive)
+  let result = (run-directive $context)
+
+  if ($result.stdout | is-not-empty) {
+    print -n $result.stdout
+  }
+
+  if ($result.stderr | is-not-empty) {
+    print -e -n $result.stderr
+  }
+
+  if ($result.exit_code != 0) {
+    exit $result.exit_code
+  }
+}
