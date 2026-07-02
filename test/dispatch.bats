@@ -14,45 +14,51 @@ EOF
   [ -z "$output" ]
 }
 
-@test "dispatch runs a single directive" {
+@test "dispatch consumes a single non-output directive" {
   cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
+before
 <!-- !$"hello" -->
+after
 EOF
 
   COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch sample.md
   [ "$status" -eq 0 ]
-  [ "$output" = "hello" ]
+  [ -z "$output" ]
+  expected=$'before\nafter'
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "$expected" ]
 }
 
-@test "dispatch runs directives in file order" {
+@test "dispatch consumes multiple non-output directives" {
   cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
 <!-- !$"first" -->
-
+middle
 <!-- !$"second" -->
 EOF
 
   COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch sample.md
   [ "$status" -eq 0 ]
-  expected=$'first\nsecond'
-  [ "$output" = "$expected" ]
+  [ -z "$output" ]
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "middle" ]
 }
 
 @test "dispatch provides context to directive scripts" {
   cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
 # Title
 
-<!-- !$"file=($context.file | path basename) line=($context.directive.range.start.line) lines=($context.lines | length)" -->
+<!-- o!$"file=($context.file | path basename) line=($context.directive.range.start.line) lines=($context.lines | length)" -->
 EOF
 
   COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch sample.md
   [ "$status" -eq 0 ]
-  [ "$output" = "file=sample.md line=2 lines=3" ]
+  [ -z "$output" ]
+  expected=$'# Title\n\nfile=sample.md line=2 lines=3'
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "$expected" ]
 }
 
 @test "dispatch supports multiline directive scripts" {
   cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
 <!--
-!
+o!
 let rows = [1 2 3]
 $rows | length
 -->
@@ -60,7 +66,8 @@ EOF
 
   COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch sample.md
   [ "$status" -eq 0 ]
-  [ "$output" = "3" ]
+  [ -z "$output" ]
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "3" ]
 }
 
 @test "dispatch replaces output directives with stdout" {
