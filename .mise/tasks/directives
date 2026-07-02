@@ -5,79 +5,22 @@
 #USAGE arg "file" help="File to scan for directives"
 #USAGE example "mise run directives README.md" header="Extract directives from a file"
 
-def normalize-comment [text: string] {
-  let trimmed = ($text | str trim)
-
-  if (($trimmed | str starts-with "<!--") and ($trimmed | str ends-with "-->")) {
-    $trimmed
-    | str replace -r '^\s*<!--' ''
-    | str replace -r '-->\s*$' ''
-    | str trim
-  } else if (($trimmed | str starts-with "/*") and ($trimmed | str ends-with "*/")) {
-    $trimmed
-    | str replace -r '^\s*/\*' ''
-    | str replace -r '\*/\s*$' ''
-    | str trim
-  } else if ($trimmed | str starts-with "//") {
-    $trimmed
-    | str replace -r '^\s*//\s?' ''
-    | str trim
-  } else if ($trimmed | str starts-with "#") {
-    $trimmed
-    | str replace -r '^\s*#\s?' ''
-    | str trim
-  } else {
-    $trimmed
-  }
-}
-
-def parse-directive [body: string] {
-  let parsed = ($body | parse --regex '^(?<flags>[^!\s]*)!(?<script>[\s\S]*)$')
-  if (($parsed | length) == 0) {
-    null
-  } else {
-    let first = ($parsed | first)
-    let flags = $first.flags
-    {
-      flags: $flags,
-      flag_list: ($flags | split chars),
-      script: ($first.script | str trim)
-    }
-  }
-}
+use ../../lib/comments/extract.nu [extract-comments resolve-target]
+use ../../lib/comments/directives.nu directive-from-comment
 
 let file = $env.usage_file
-let extraction = (^mise run -q extract $file | complete)
-if ($extraction.exit_code != 0) {
-  print -e ($extraction.stderr | str trim)
-  exit $extraction.exit_code
+let base = ($env.COMMENTS_CALLER_PWD? | default $env.PWD)
+let target = (resolve-target $file $base)
+
+if (($target | path type) != "file") {
+  print -e $"comments directives: file not found: ($file)"
+  exit 1
 }
 
-if ($extraction.stdout | str trim | is-empty) {
-  exit 0
-}
-
-let comments = (
-  $extraction.stdout
-  | lines
-  | where {|line| ($line | str trim | is-not-empty) }
-  | each {|line| $line | from json }
-)
-
-for comment in $comments {
-  let body = (normalize-comment $comment.text)
-  let directive = (parse-directive $body)
+for comment in (extract-comments $target) {
+  let directive = (directive-from-comment $comment)
 
   if $directive != null {
-    print ({
-      file: $comment.file,
-      kind: $comment.kind,
-      range: $comment.range,
-      text: $comment.text,
-      body: $body,
-      flags: $directive.flags,
-      flag_list: $directive.flag_list,
-      script: $directive.script,
-    } | to json -r)
+    print ($directive | to json -r)
   }
 }
