@@ -181,6 +181,50 @@ EOF
   [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "$expected" ]
 }
 
+@test "dispatch preserves UTF-8 content before inline output directives" {
+  cat > "$BATS_TEST_TMPDIR/sample.js" <<'EOF'
+const s = "é"; // o!print -n "X"
+next()
+EOF
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch sample.js
+  [ "$status" -eq 0 ]
+  expected=$'const s = "é"; X\nnext()'
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.js")" = "$expected" ]
+}
+
+@test "dispatch consumes CRLF standalone directive lines" {
+  printf 'before\r\n<!-- !$"x" -->\r\nafter\r\n' > "$BATS_TEST_TMPDIR/sample.md"
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch sample.md
+  [ "$status" -eq 0 ]
+  python3 - "$BATS_TEST_TMPDIR/sample.md" <<'PY'
+import pathlib, sys
+assert pathlib.Path(sys.argv[1]).read_bytes() == b"before\r\nafter\r\n"
+PY
+}
+
+@test "dispatch consumes final directive without trailing newline" {
+  printf 'before\n<!-- !$"x" -->' > "$BATS_TEST_TMPDIR/sample.md"
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch sample.md
+  [ "$status" -eq 0 ]
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "before" ]
+}
+
+@test "dispatch removes standalone output directives with empty stdout" {
+  cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
+before
+<!-- o!null -->
+after
+EOF
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch sample.md
+  [ "$status" -eq 0 ]
+  expected=$'before\nafter'
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "$expected" ]
+}
+
 @test "dispatch replaces multiline output directive comments" {
   cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
 before
