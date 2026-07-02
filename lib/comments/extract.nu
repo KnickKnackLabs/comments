@@ -1,11 +1,13 @@
 # Comment extraction helpers shared by comments tasks.
 
 export def resolve-target [file: string, base: string] {
-  if ($file | str starts-with "/") {
+  let target = if ($file | str starts-with "/") {
     $file
   } else {
     [$base $file] | path join
   }
+
+  $target | path expand --no-symlink
 }
 
 export def extract-comments [target: string] {
