@@ -28,9 +28,9 @@ import {
 } from "readme";
 
 const PROJECT = {
-  name: "template",
-  oneLine: "A sane starting point for small KnickKnackLabs tools.",
-  tagline: "Copy the boring parts so the interesting parts start sooner.",
+  name: "comments",
+  oneLine: "Harvest and consume structured directives embedded in source comments.",
+  tagline: "Turn comments into explicit, user-triggered commands.",
   license: "MIT",
 };
 
@@ -162,30 +162,22 @@ const readme = (
 
     <Section title="What this is">
       <Paragraph>
-        <Code>template</Code>
-        {" is the default empty room for a new KnickKnackLabs tool: mise-managed tasks, BATS tests, codebase convention lints, generated README, CI, and a "}
-        <Code>doctor</Code>
-        {" task that tells you whether your clone has the optional local pre-commit hook installed."}
+        <Code>comments</Code>
+        {" is a generic CLI for extracting structured directives from source comments, evaluating them with nushell, and optionally writing results back to disk."}
       </Paragraph>
 
       <Paragraph>
-        {"This is deliberately a normal repo, not a GitHub template repo. Copy the files, start fresh history for the new tool, and keep this repo as the living reference skeleton."}
-      </Paragraph>
-
-      <Paragraph>
-        {"It intentionally does "}
-        <Bold>not</Bold>
-        {" decide what your product does. Copy it, rename the obvious constants, then add the first real command only when the workflow is clear."}
+        {"A directive is a comment body that starts with "}
+        <Code>{"<flags>!"}</Code>
+        {". "}
+        <Code>comments</Code>
+        {" extracts those directives, evaluates the body with nushell, and can optionally replace the original comment with command output."}
       </Paragraph>
     </Section>
 
     <Section title="Quick start">
-      <CodeBlock lang="bash">{`gh repo clone KnickKnackLabs/template my-tool
-cd my-tool
-
-# Start the new tool with its own history instead of inheriting template commits.
-rm -rf .git
-git init -b main
+      <CodeBlock lang="bash">{`gh repo clone KnickKnackLabs/comments
+cd comments
 
 mise trust
 mise install
@@ -193,12 +185,7 @@ mise run test
 mise run doctor
 
 # Optional local safety net: installs .git/hooks/pre-commit.d/codebase
-codebase pre-commit
-
-# When the skeleton is shaped for the new tool, create and push its repo.
-git add .
-git commit -m "chore: start from KKL tool skeleton"
-gh repo create KnickKnackLabs/my-tool --public --source=. --remote=origin --push`}</CodeBlock>
+codebase pre-commit`}</CodeBlock>
     </Section>
 
     <Section title="Goodies baked in">
@@ -268,14 +255,13 @@ gh repo create KnickKnackLabs/my-tool --public --source=. --remote=origin --push
       </Table>
     </Section>
 
-    <Section title="When you copy it">
+    <Section title="Design notes">
       <List ordered>
-        <Item>Rename <Code>PROJECT</Code> in <Code>README.tsx</Code>.</Item>
-        <Item>Rewrite this README around the actual tool, but keep the dynamic counters if they help.</Item>
-        <Item>Replace <Code>CONTRIBUTING.md</Code> with repo-specific orientation.</Item>
-        <Item>Add real task files under <Code>.mise/tasks/</Code>; use <Code>$MISE_CONFIG_ROOT</Code> inside tasks only.</Item>
-        <Item>Put shared Bash helpers in <Code>lib/</Code> only once multiple tasks need them.</Item>
-        <Item>If the installed tool resolves caller-relative paths, read the shiv-provided <Code>{"<PACKAGE>_CALLER_PWD"}</Code> variable, not generic <Code>CALLER_PWD</Code>.</Item>
+        <Item>Use ast-grep/tree-sitter to extract comment-like nodes where possible.</Item>
+        <Item>Recognize directives whose normalized comment body starts with <Code>{"<flags>!"}</Code>.</Item>
+        <Item>Evaluate directive bodies with nushell; context is opt-in and available at consumption time.</Item>
+        <Item>Keep the core independent of any one editor or calling workflow.</Item>
+        <Item>Write results by editing files on disk; do not require editor buffer access.</Item>
       </List>
     </Section>
 
@@ -312,7 +298,7 @@ git diff --check`}</CodeBlock>
         <Link href="https://github.com/KnickKnackLabs/readme">KnickKnackLabs/readme</Link>
         {"."}
         <Raw>{"<br />"}</Raw>
-        {"A skeleton is a kindness to whoever has to remember the boring parts tomorrow."}
+        {"Comments are executable only when a human chooses to consume them."}
       </Sub>
     </Center>
   </>

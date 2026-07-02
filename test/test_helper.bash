@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Shared fixtures for template tests.
+# Shared fixtures for comments tests.
 
 # Run a repo task through mise so tests exercise the real task path.
-template() {
+comments() {
   cd "$REPO_DIR" && mise run -q "$@"
 }
-export -f template
+export -f comments

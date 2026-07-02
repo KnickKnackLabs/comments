@@ -2,7 +2,7 @@
 
 load test_helper
 
-@test "standard skeleton surfaces exist" {
+@test "standard comments surfaces exist" {
   for path in \
     mise.toml \
     README.tsx \
@@ -23,7 +23,13 @@ load test_helper
 }
 
 @test "doctor reports optional pre-commit hook state" {
-  run template doctor
+  run comments doctor
   [ "$status" -eq 0 ]
   [[ "$output" == *"pre-commit"* ]]
+}
+
+
+@test "runtime tools are available" {
+  run bash -c 'command -v ast-grep && command -v nu && command -v jq'
+  [ "$status" -eq 0 ]
 }

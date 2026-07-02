@@ -1,13 +1,13 @@
 <div align="center">
 
-# template
+# comments
 
-**A sane starting point for small KnickKnackLabs tools.**
+**Harvest and consume structured directives embedded in source comments.**
 
-Copy the boring parts so the interesting parts start sooner.
+Turn comments into explicit, user-triggered commands.
 
 ![shape: mise + BATS](https://img.shields.io/badge/shape-mise%20%2B%20BATS-4EAA25?style=flat&logo=gnubash&logoColor=white)
-[![tests: 3](https://img.shields.io/badge/tests-3-brightgreen?style=flat)](test/)
+[![tests: 4](https://img.shields.io/badge/tests-4-brightgreen?style=flat)](test/)
 ![lints: 9](https://img.shields.io/badge/lints-9-blue?style=flat)
 ![README: TSX](https://img.shields.io/badge/README-TSX-f472b6?style=flat)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat)](LICENSE)
@@ -18,21 +18,15 @@ Copy the boring parts so the interesting parts start sooner.
 
 ## What this is
 
-`template` is the default empty room for a new KnickKnackLabs tool: mise-managed tasks, BATS tests, codebase convention lints, generated README, CI, and a `doctor` task that tells you whether your clone has the optional local pre-commit hook installed.
+`comments` is a generic CLI for extracting structured directives from source comments, evaluating them with nushell, and optionally writing results back to disk.
 
-This is deliberately a normal repo, not a GitHub template repo. Copy the files, start fresh history for the new tool, and keep this repo as the living reference skeleton.
-
-It intentionally does **not** decide what your product does. Copy it, rename the obvious constants, then add the first real command only when the workflow is clear.
+A directive is a comment body that starts with `<flags>!`. `comments` extracts those directives, evaluates the body with nushell, and can optionally replace the original comment with command output.
 
 ## Quick start
 
 ```bash
-gh repo clone KnickKnackLabs/template my-tool
-cd my-tool
-
-# Start the new tool with its own history instead of inheriting template commits.
-rm -rf .git
-git init -b main
+gh repo clone KnickKnackLabs/comments
+cd comments
 
 mise trust
 mise install
@@ -41,11 +35,6 @@ mise run doctor
 
 # Optional local safety net: installs .git/hooks/pre-commit.d/codebase
 codebase pre-commit
-
-# When the skeleton is shaped for the new tool, create and push its repo.
-git add .
-git commit -m "chore: start from KKL tool skeleton"
-gh repo create KnickKnackLabs/my-tool --public --source=. --remote=origin --push
 ```
 
 ## Goodies baked in
@@ -78,14 +67,13 @@ gh repo create KnickKnackLabs/my-tool --public --source=. --remote=origin --push
 | `mise run doctor` | Check local development setup |
 | `mise run test`   | Run BATS tests                |
 
-## When you copy it
+## Design notes
 
-1. Rename `PROJECT` in `README.tsx`.
-2. Rewrite this README around the actual tool, but keep the dynamic counters if they help.
-3. Replace `CONTRIBUTING.md` with repo-specific orientation.
-4. Add real task files under `.mise/tasks/`; use `$MISE_CONFIG_ROOT` inside tasks only.
-5. Put shared Bash helpers in `lib/` only once multiple tasks need them.
-6. If the installed tool resolves caller-relative paths, read the shiv-provided `<PACKAGE>_CALLER_PWD` variable, not generic `CALLER_PWD`.
+1. Use ast-grep/tree-sitter to extract comment-like nodes where possible.
+2. Recognize directives whose normalized comment body starts with `<flags>!`.
+3. Evaluate directive bodies with nushell; context is opt-in and available at consumption time.
+4. Keep the core independent of any one editor or calling workflow.
+5. Write results by editing files on disk; do not require editor buffer access.
 
 <details>
 <summary><b>Current convention checks</b></summary>
@@ -115,12 +103,12 @@ readme build --check
 git diff --check
 ```
 
-The starter suite currently has **3 tests** and **2 public tasks**. Those numbers are read from the repo at README build time.
+The starter suite currently has **4 tests** and **2 public tasks**. Those numbers are read from the repo at README build time.
 
 <div align="center">
 
 ---
 
 <sub>
-This README was generated from `README.tsx` with [KnickKnackLabs/readme](https://github.com/KnickKnackLabs/readme).<br />A skeleton is a kindness to whoever has to remember the boring parts tomorrow.
+This README was generated from `README.tsx` with [KnickKnackLabs/readme](https://github.com/KnickKnackLabs/readme).<br />Comments are executable only when a human chooses to consume them.
 </sub></div>
