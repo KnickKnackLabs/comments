@@ -7,7 +7,7 @@
 Turn comments into explicit, user-triggered commands.
 
 ![shape: mise + BATS](https://img.shields.io/badge/shape-mise%20%2B%20BATS-4EAA25?style=flat&logo=gnubash&logoColor=white)
-[![tests: 70](https://img.shields.io/badge/tests-70-brightgreen?style=flat)](test/)
+[![tests: 72](https://img.shields.io/badge/tests-72-brightgreen?style=flat)](test/)
 ![lints: 9](https://img.shields.io/badge/lints-9-blue?style=flat)
 ![README: TSX](https://img.shields.io/badge/README-TSX-f472b6?style=flat)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat)](LICENSE)
@@ -101,6 +101,7 @@ comments dispatch --stdout notes.md
 - `o` is currently the only supported public flag; recognized but unsupported flags fail without consuming the directive.
 - Failed directives remain unchanged.
 - Successful directives are consumed/replaced even if another directive fails.
+- If a directive mutates the target file during normal dispatch, `comments` refuses to apply stale byte-range replacements.
 - `--stdout` executes directives but prints the transformed file instead of modifying it.
 
 ## Context
@@ -159,7 +160,7 @@ readme build --check
 git diff --check
 ```
 
-The starter suite currently has **70 tests** and **3 public tasks**. Those numbers are read from the repo at README build time.
+The starter suite currently has **72 tests** and **3 public tasks**. Those numbers are read from the repo at README build time.
 
 <div align="center">
 

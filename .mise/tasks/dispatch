@@ -8,7 +8,7 @@
 
 use ../../lib/comments/extract.nu [extract-comments resolve-target]
 use ../../lib/comments/directives.nu directive-from-comment
-use ../../lib/comments/dispatch.nu [apply-replacements apply-replacements-to-content context-for-directive directive-writes-output replacement-for-directive run-directive unsupported-flags]
+use ../../lib/comments/dispatch.nu [apply-replacements-to-content context-for-directive directive-writes-output replacement-for-directive run-directive unsupported-flags]
 
 let file = $env.usage_file
 let stdout = ($env.usage_stdout == "true")
@@ -20,6 +20,7 @@ if (($target | path type) != "file") {
   exit 1
 }
 
+let original_content = (open --raw $target)
 let comments = (extract-comments $target)
 let directives = (
   $comments
@@ -41,7 +42,7 @@ for directive in $directives {
     continue
   }
 
-  let context = (context-for-directive $target $directive)
+  let context = (context-for-directive $target $original_content $directive)
   let result = (run-directive $context)
 
   if ($result.exit_code == 0) {
@@ -65,9 +66,15 @@ for directive in $directives {
 }
 
 if $stdout {
-  print -n (apply-replacements-to-content (open --raw $target) $replacements)
+  print -n (apply-replacements-to-content $original_content $replacements)
 } else if (($replacements | length) > 0) {
-  apply-replacements $target $replacements
+  let current_content = (open --raw $target)
+  if $current_content != $original_content {
+    print -e "comments dispatch: target file changed during dispatch; refusing to apply stale replacements"
+    exit 1
+  }
+
+  apply-replacements-to-content $original_content $replacements | save --force $target
 }
 
 if (($failures | length) > 0) {

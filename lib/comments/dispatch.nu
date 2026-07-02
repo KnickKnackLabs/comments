@@ -1,9 +1,9 @@
 # Directive dispatch helpers shared by comments tasks.
 
-export def context-for-directive [target: string, directive: record] {
+export def context-for-directive [target: string, content: string, directive: record] {
   {
     file: $target,
-    lines: (open --raw $target | lines),
+    lines: ($content | lines),
     directive: $directive,
   }
 }

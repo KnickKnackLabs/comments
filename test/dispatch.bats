@@ -261,6 +261,30 @@ EOF
   [[ "$output" == *"unsupported directive flags: i"* ]]
 }
 
+@test "dispatch refuses stale replacements if a directive mutates the target file" {
+  cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
+<!-- !"SIDE" | save --force $context.file -->
+<!-- o!$"replacement" -->
+EOF
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch sample.md
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"target file changed during dispatch"* ]]
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "SIDE" ]
+}
+
+@test "dispatch --stdout uses the original snapshot even if a directive mutates the target file" {
+  cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
+<!-- !"SIDE" | save --force $context.file -->
+<!-- o!$"replacement" -->
+EOF
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch --stdout sample.md
+  [ "$status" -eq 0 ]
+  [ "$output" = "replacement" ]
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "SIDE" ]
+}
+
 @test "dispatch propagates directive failures" {
   cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
 <!-- !exit 7 -->

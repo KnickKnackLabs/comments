@@ -295,6 +295,7 @@ $rows | length
         <Item><Code>o</Code> is currently the only supported public flag; recognized but unsupported flags fail without consuming the directive.</Item>
         <Item>Failed directives remain unchanged.</Item>
         <Item>Successful directives are consumed/replaced even if another directive fails.</Item>
+        <Item>If a directive mutates the target file during normal dispatch, <Code>comments</Code> refuses to apply stale byte-range replacements.</Item>
         <Item><Code>--stdout</Code> executes directives but prints the transformed file instead of modifying it.</Item>
       </List>
     </Section>
