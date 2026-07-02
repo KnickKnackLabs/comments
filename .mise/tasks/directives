@@ -5,7 +5,7 @@
 #USAGE arg "file" help="File to scan for directives"
 #USAGE example "mise run directives README.md" header="Extract directives from a file"
 
-use ../../lib/comments/extract.nu [extract-comments resolve-target]
+use ../../lib/comments/extract.nu [extract-comments is-supported-target resolve-target supported-extension-message]
 use ../../lib/comments/directives.nu directive-from-comment
 
 let file = $env.usage_file
@@ -14,6 +14,11 @@ let target = (resolve-target $file $base)
 
 if (($target | path type) != "file") {
   print -e $"comments directives: file not found: ($file)"
+  exit 1
+}
+
+if not (is-supported-target $target) {
+  print -e $"comments directives: (supported-extension-message $target)"
   exit 1
 }
 

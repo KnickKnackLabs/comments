@@ -1,5 +1,21 @@
 # Comment extraction helpers shared by comments tasks.
 
+export const SUPPORTED_EXTENSIONS = [md js jsx ts tsx rs go sh py]
+
+export def extension-for-path [target: string] {
+  $target | path parse | get extension | str downcase
+}
+
+export def is-supported-target [target: string] {
+  (extension-for-path $target) in $SUPPORTED_EXTENSIONS
+}
+
+export def supported-extension-message [file: string] {
+  let extension = (extension-for-path $file)
+  let display = if ($extension | is-empty) { "<none>" } else { $".($extension)" }
+  $"unsupported file extension: ($display)"
+}
+
 export def resolve-target [file: string, base: string] {
   let target = if ($file | str starts-with "/") {
     $file

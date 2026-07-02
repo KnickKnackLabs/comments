@@ -6,7 +6,7 @@
 #USAGE example "mise run dispatch README.md" header="Dispatch directives in a file"
 #USAGE example "mise run dispatch --stdout README.md" header="Preview transformed file content"
 
-use ../../lib/comments/extract.nu [extract-comments resolve-target]
+use ../../lib/comments/extract.nu [extract-comments is-supported-target resolve-target supported-extension-message]
 use ../../lib/comments/directives.nu directive-from-comment
 use ../../lib/comments/dispatch.nu [apply-replacements-to-content context-for-directive directive-writes-output replacement-for-directive run-directive unsupported-flags]
 
@@ -17,6 +17,11 @@ let target = (resolve-target $file $base)
 
 if (($target | path type) != "file") {
   print -e $"comments dispatch: file not found: ($file)"
+  exit 1
+}
+
+if not (is-supported-target $target) {
+  print -e $"comments dispatch: (supported-extension-message $target)"
   exit 1
 }
 

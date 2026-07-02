@@ -300,6 +300,30 @@ $rows | length
       </List>
     </Section>
 
+    <Section title="Supported files">
+      <Paragraph>
+        {"The v1 supported extension set is intentionally explicit: "}
+        <Code>.md</Code>
+        {", "}
+        <Code>.js</Code>
+        {", "}
+        <Code>.jsx</Code>
+        {", "}
+        <Code>.ts</Code>
+        {", "}
+        <Code>.tsx</Code>
+        {", "}
+        <Code>.rs</Code>
+        {", "}
+        <Code>.go</Code>
+        {", "}
+        <Code>.sh</Code>
+        {", and "}
+        <Code>.py</Code>
+        {". Unsupported extensions fail clearly instead of being treated as files with no directives."}
+      </Paragraph>
+    </Section>
+
     <Section title="Context">
       <Paragraph>
         {"Each directive script receives a structured "}

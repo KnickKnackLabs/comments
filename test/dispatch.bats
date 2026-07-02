@@ -294,6 +294,18 @@ EOF
   [ "$status" -eq 7 ]
 }
 
+@test "dispatch exits nonzero for unsupported file extensions" {
+  cat > "$BATS_TEST_TMPDIR/sample.txt" <<'EOF'
+# !text
+EOF
+  original="$(cat "$BATS_TEST_TMPDIR/sample.txt")"
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch sample.txt
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"unsupported file extension: .txt"* ]]
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.txt")" = "$original" ]
+}
+
 @test "dispatch exits nonzero for missing files" {
   COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch missing.md
   [ "$status" -ne 0 ]

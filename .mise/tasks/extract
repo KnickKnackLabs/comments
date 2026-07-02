@@ -5,7 +5,7 @@
 #USAGE arg "file" help="File to scan for comments"
 #USAGE example "mise run extract README.md" header="Extract comment nodes from a file"
 
-use ../../lib/comments/extract.nu [extract-comments resolve-target]
+use ../../lib/comments/extract.nu [extract-comments is-supported-target resolve-target supported-extension-message]
 
 let file = $env.usage_file
 let base = ($env.COMMENTS_CALLER_PWD? | default $env.PWD)
@@ -13,6 +13,11 @@ let target = (resolve-target $file $base)
 
 if (($target | path type) != "file") {
   print -e $"comments extract: file not found: ($file)"
+  exit 1
+}
+
+if not (is-supported-target $target) {
+  print -e $"comments extract: (supported-extension-message $target)"
   exit 1
 }
 

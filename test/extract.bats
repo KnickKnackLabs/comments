@@ -28,6 +28,42 @@ EOF
   printf '%s\n' "$output" | jq -e '.text | contains("!chat hello")' >/dev/null
 }
 
+@test "extract returns JSX comments" {
+  cat > "$BATS_TEST_TMPDIR/sample.jsx" <<'EOF'
+// !jsx
+export const value = 1
+EOF
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments extract sample.jsx
+  [ "$status" -eq 0 ]
+  [ "$(printf '%s\n' "$output" | jq -r '.kind')" = "comment" ]
+  [ "$(printf '%s\n' "$output" | jq -r '.text')" = "// !jsx" ]
+}
+
+@test "extract returns TypeScript comments" {
+  cat > "$BATS_TEST_TMPDIR/sample.ts" <<'EOF'
+// !ts
+const value: number = 1
+EOF
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments extract sample.ts
+  [ "$status" -eq 0 ]
+  [ "$(printf '%s\n' "$output" | jq -r '.kind')" = "comment" ]
+  [ "$(printf '%s\n' "$output" | jq -r '.text')" = "// !ts" ]
+}
+
+@test "extract returns TSX comments" {
+  cat > "$BATS_TEST_TMPDIR/sample.tsx" <<'EOF'
+// !tsx
+export const value = <div />
+EOF
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments extract sample.tsx
+  [ "$status" -eq 0 ]
+  [ "$(printf '%s\n' "$output" | jq -r '.kind')" = "comment" ]
+  [ "$(printf '%s\n' "$output" | jq -r '.text')" = "// !tsx" ]
+}
+
 @test "extract returns Rust line comments" {
   cat > "$BATS_TEST_TMPDIR/sample.rs" <<'EOF'
 fn main() {
@@ -39,6 +75,43 @@ EOF
   [ "$status" -eq 0 ]
   [ "$(printf '%s\n' "$output" | jq -r '.kind')" = "line_comment" ]
   [[ "$(printf '%s\n' "$output" | jq -r '.text')" == "// !chat hello" ]]
+}
+
+@test "extract returns Go comments" {
+  cat > "$BATS_TEST_TMPDIR/sample.go" <<'EOF'
+package main
+// !go
+func main() {}
+EOF
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments extract sample.go
+  [ "$status" -eq 0 ]
+  [ "$(printf '%s\n' "$output" | jq -r '.kind')" = "comment" ]
+  [ "$(printf '%s\n' "$output" | jq -r '.text')" = "// !go" ]
+}
+
+@test "extract returns shell comments" {
+  cat > "$BATS_TEST_TMPDIR/sample.sh" <<'EOF'
+# !shell
+echo hi
+EOF
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments extract sample.sh
+  [ "$status" -eq 0 ]
+  [ "$(printf '%s\n' "$output" | jq -r '.kind')" = "comment" ]
+  [ "$(printf '%s\n' "$output" | jq -r '.text')" = "# !shell" ]
+}
+
+@test "extract returns Python comments" {
+  cat > "$BATS_TEST_TMPDIR/sample.py" <<'EOF'
+# !python
+print("hi")
+EOF
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments extract sample.py
+  [ "$status" -eq 0 ]
+  [ "$(printf '%s\n' "$output" | jq -r '.kind')" = "comment" ]
+  [ "$(printf '%s\n' "$output" | jq -r '.text')" = "# !python" ]
 }
 
 @test "extract returns multiline Markdown HTML comments" {
@@ -91,6 +164,16 @@ EOF
   COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments extract sample.js
   [ "$status" -eq 0 ]
   [ -z "$output" ]
+}
+
+@test "extract exits nonzero for unsupported file extensions" {
+  cat > "$BATS_TEST_TMPDIR/sample.txt" <<'EOF'
+# !text
+EOF
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments extract sample.txt
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"unsupported file extension: .txt"* ]]
 }
 
 @test "extract exits nonzero for missing files" {
