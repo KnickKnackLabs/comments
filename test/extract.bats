@@ -30,38 +30,38 @@ EOF
 
 @test "extract returns JSX comments" {
   cat > "$BATS_TEST_TMPDIR/sample.jsx" <<'EOF'
-// !jsx
+// !echo "from jsx"
 export const value = 1
 EOF
 
   COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments extract sample.jsx
   [ "$status" -eq 0 ]
   [ "$(printf '%s\n' "$output" | jq -r '.kind')" = "comment" ]
-  [ "$(printf '%s\n' "$output" | jq -r '.text')" = "// !jsx" ]
+  [ "$(printf '%s\n' "$output" | jq -r '.text')" = "// !echo \"from jsx\"" ]
 }
 
 @test "extract returns TypeScript comments" {
   cat > "$BATS_TEST_TMPDIR/sample.ts" <<'EOF'
-// !ts
+// !echo "from ts"
 const value: number = 1
 EOF
 
   COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments extract sample.ts
   [ "$status" -eq 0 ]
   [ "$(printf '%s\n' "$output" | jq -r '.kind')" = "comment" ]
-  [ "$(printf '%s\n' "$output" | jq -r '.text')" = "// !ts" ]
+  [ "$(printf '%s\n' "$output" | jq -r '.text')" = "// !echo \"from ts\"" ]
 }
 
 @test "extract returns TSX comments" {
   cat > "$BATS_TEST_TMPDIR/sample.tsx" <<'EOF'
-// !tsx
+// !echo "from tsx"
 export const value = <div />
 EOF
 
   COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments extract sample.tsx
   [ "$status" -eq 0 ]
   [ "$(printf '%s\n' "$output" | jq -r '.kind')" = "comment" ]
-  [ "$(printf '%s\n' "$output" | jq -r '.text')" = "// !tsx" ]
+  [ "$(printf '%s\n' "$output" | jq -r '.text')" = "// !echo \"from tsx\"" ]
 }
 
 @test "extract returns Rust line comments" {
@@ -80,38 +80,38 @@ EOF
 @test "extract returns Go comments" {
   cat > "$BATS_TEST_TMPDIR/sample.go" <<'EOF'
 package main
-// !go
+// !echo "from go"
 func main() {}
 EOF
 
   COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments extract sample.go
   [ "$status" -eq 0 ]
   [ "$(printf '%s\n' "$output" | jq -r '.kind')" = "comment" ]
-  [ "$(printf '%s\n' "$output" | jq -r '.text')" = "// !go" ]
+  [ "$(printf '%s\n' "$output" | jq -r '.text')" = "// !echo \"from go\"" ]
 }
 
 @test "extract returns shell comments" {
   cat > "$BATS_TEST_TMPDIR/sample.sh" <<'EOF'
-# !shell
+# !echo "from shell"
 echo hi
 EOF
 
   COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments extract sample.sh
   [ "$status" -eq 0 ]
   [ "$(printf '%s\n' "$output" | jq -r '.kind')" = "comment" ]
-  [ "$(printf '%s\n' "$output" | jq -r '.text')" = "# !shell" ]
+  [ "$(printf '%s\n' "$output" | jq -r '.text')" = "# !echo \"from shell\"" ]
 }
 
 @test "extract returns Python comments" {
   cat > "$BATS_TEST_TMPDIR/sample.py" <<'EOF'
-# !python
+# !echo "from python"
 print("hi")
 EOF
 
   COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments extract sample.py
   [ "$status" -eq 0 ]
   [ "$(printf '%s\n' "$output" | jq -r '.kind')" = "comment" ]
-  [ "$(printf '%s\n' "$output" | jq -r '.text')" = "# !python" ]
+  [ "$(printf '%s\n' "$output" | jq -r '.text')" = "# !echo \"from python\"" ]
 }
 
 @test "extract returns multiline Markdown HTML comments" {
