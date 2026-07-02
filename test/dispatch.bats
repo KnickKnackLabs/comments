@@ -14,6 +14,19 @@ EOF
   [ -z "$output" ]
 }
 
+@test "dispatch --stdout prints unchanged content when file has no directives" {
+  cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
+# Title
+
+ordinary text
+EOF
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch --stdout sample.md
+  [ "$status" -eq 0 ]
+  expected=$'# Title\n\nordinary text'
+  [ "$output" = "$expected" ]
+}
+
 @test "dispatch consumes a single non-output directive" {
   cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
 before
@@ -68,6 +81,37 @@ EOF
   [ "$status" -eq 0 ]
   [ -z "$output" ]
   [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "3" ]
+}
+
+@test "dispatch --stdout previews transformed content without modifying the file" {
+  cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
+before
+<!-- !$"consume me" -->
+<!-- o!$"replace me" -->
+after
+EOF
+  original="$(cat "$BATS_TEST_TMPDIR/sample.md")"
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch --stdout sample.md
+  [ "$status" -eq 0 ]
+  expected=$'before\nreplace me\nafter'
+  [ "$output" = "$expected" ]
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "$original" ]
+}
+
+@test "dispatch --stdout leaves failed directives unchanged in preview" {
+  cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
+<!-- o!$"first" -->
+<!-- o!exit 7 -->
+<!-- o!$"third" -->
+EOF
+  original="$(cat "$BATS_TEST_TMPDIR/sample.md")"
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch --stdout sample.md
+  [ "$status" -eq 7 ]
+  expected=$'first\n<!-- o!exit 7 -->\nthird'
+  [[ "$output" == "$expected"* ]]
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "$original" ]
 }
 
 @test "dispatch replaces output directives with stdout" {

@@ -1,14 +1,17 @@
 #!/usr/bin/env nu
 #MISE description="Dispatch comment directives in a file"
 #MISE dir="{{config_root}}"
+#USAGE flag "--stdout" default=#false help="Print the transformed file to stdout instead of writing it back"
 #USAGE arg "file" help="File whose directives should be dispatched"
 #USAGE example "mise run dispatch README.md" header="Dispatch directives in a file"
+#USAGE example "mise run dispatch --stdout README.md" header="Preview transformed file content"
 
 use ../../lib/comments/extract.nu [extract-comments resolve-target]
 use ../../lib/comments/directives.nu directive-from-comment
-use ../../lib/comments/dispatch.nu [apply-replacements context-for-directive directive-writes-output replacement-for-directive run-directive unsupported-flags]
+use ../../lib/comments/dispatch.nu [apply-replacements apply-replacements-to-content context-for-directive directive-writes-output replacement-for-directive run-directive unsupported-flags]
 
 let file = $env.usage_file
+let stdout = ($env.usage_stdout == "true")
 let base = ($env.COMMENTS_CALLER_PWD? | default $env.PWD)
 let target = (resolve-target $file $base)
 
@@ -61,7 +64,9 @@ for directive in $directives {
   }
 }
 
-if (($replacements | length) > 0) {
+if $stdout {
+  print -n (apply-replacements-to-content (open --raw $target) $replacements)
+} else if (($replacements | length) > 0) {
   apply-replacements $target $replacements
 }
 

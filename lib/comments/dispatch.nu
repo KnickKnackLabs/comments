@@ -32,18 +32,22 @@ export def replacement-for-directive [directive: record, output: string] {
   }
 }
 
-export def apply-replacements [target: string, replacements: list] {
-  mut content = (open --raw $target)
+export def apply-replacements-to-content [content: string, replacements: list] {
+  mut output = $content
 
   for replacement in ($replacements | sort-by --reverse start) {
     let before = if $replacement.start == 0 {
       ""
     } else {
-      $content | str substring 0..<$replacement.start
+      $output | str substring 0..<$replacement.start
     }
-    let after = ($content | str substring $replacement.end..)
-    $content = $before + $replacement.output + $after
+    let after = ($output | str substring $replacement.end..)
+    $output = $before + $replacement.output + $after
   }
 
-  $content | save --force $target
+  $output
+}
+
+export def apply-replacements [target: string, replacements: list] {
+  apply-replacements-to-content (open --raw $target) $replacements | save --force $target
 }
