@@ -22,7 +22,17 @@ Turn comments into explicit, user-triggered commands.
 
 A directive is a comment body that starts with `<flags>!`. `comments` extracts those directives, evaluates the body with nushell, and can optionally replace the original comment with command output.
 
-## Quick start
+## Install
+
+After this package is registered with [shiv](https://github.com/KnickKnackLabs/shiv), install it as:
+
+```bash
+shiv install comments
+```
+
+Public usage examples assume the shiv-installed command name, `comments`.
+
+## Working from a checkout
 
 ```bash
 gh repo clone KnickKnackLabs/comments
@@ -32,6 +42,9 @@ mise trust
 mise install
 mise run test
 mise run doctor
+
+# Run commands through mise while developing from the checkout.
+mise run dispatch --stdout examples/basic.md
 
 # Optional local safety net: installs .git/hooks/pre-commit.d/codebase
 codebase pre-commit

@@ -176,7 +176,23 @@ const readme = (
       </Paragraph>
     </Section>
 
-    <Section title="Quick start">
+    <Section title="Install">
+      <Paragraph>
+        {"After this package is registered with "}
+        <Link href="https://github.com/KnickKnackLabs/shiv">shiv</Link>
+        {", install it as:"}
+      </Paragraph>
+
+      <CodeBlock lang="bash">{`shiv install comments`}</CodeBlock>
+
+      <Paragraph>
+        {"Public usage examples assume the shiv-installed command name, "}
+        <Code>comments</Code>
+        {"."}
+      </Paragraph>
+    </Section>
+
+    <Section title="Working from a checkout">
       <CodeBlock lang="bash">{`gh repo clone KnickKnackLabs/comments
 cd comments
 
@@ -184,6 +200,9 @@ mise trust
 mise install
 mise run test
 mise run doctor
+
+# Run commands through mise while developing from the checkout.
+mise run dispatch --stdout examples/basic.md
 
 # Optional local safety net: installs .git/hooks/pre-commit.d/codebase
 codebase pre-commit`}</CodeBlock>
