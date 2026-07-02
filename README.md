@@ -68,6 +68,60 @@ codebase pre-commit
 | `mise run doctor`   | Check local development setup         |
 | `mise run test`     | Run BATS tests                        |
 
+## Usage
+
+A directive is a source comment whose normalized body starts with `<flags>!` followed by a Nushell script.
+
+```md
+<!-- !$"run and consume me" -->
+
+<!-- o!$"replace me with stdout" -->
+
+<!--
+o!
+let rows = [1 2 3]
+$rows | length
+-->
+```
+
+Dispatch every directive in a file:
+
+```bash
+comments dispatch notes.md
+```
+
+Preview the transformed file without writing it back:
+
+```bash
+comments dispatch --stdout notes.md
+```
+
+- `!script` runs the script and consumes the directive comment.
+- `o!script` runs the script and replaces the directive comment with stdout.
+- Failed directives remain unchanged.
+- Successful directives are consumed/replaced even if another directive fails.
+- `--stdout` executes directives but prints the transformed file instead of modifying it.
+
+## Context
+
+Each directive script receives a structured `$context` record:
+
+```nu
+$context.file                  # absolute target file path
+$context.lines                 # original file lines
+$context.directive.flags       # flag string, e.g. "o"
+$context.directive.flag_list   # flag list, e.g. ["o"]
+$context.directive.range       # ast-grep byte/line range
+$context.directive.text        # original comment text
+$context.directive.body        # normalized comment body
+$context.directive.script      # script being executed
+```
+
+## Examples
+
+- `examples/basic.md` shows consume-only directives, output replacement, and multiline directive form.
+- `examples/chat.md` is a recipe for sending a file-local note through the `chat` CLI; it is not a live directive because `chat send` has side effects.
+
 ## Design notes
 
 1. Use ast-grep/tree-sitter to extract comment-like nodes where possible.

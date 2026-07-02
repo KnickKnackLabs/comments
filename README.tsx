@@ -256,6 +256,68 @@ codebase pre-commit`}</CodeBlock>
       </Table>
     </Section>
 
+    <Section title="Usage">
+      <Paragraph>
+        {"A directive is a source comment whose normalized body starts with "}
+        <Code>{"<flags>!"}</Code>
+        {" followed by a Nushell script."}
+      </Paragraph>
+
+      <CodeBlock lang="md">{`<!-- !$"run and consume me" -->
+
+<!-- o!$"replace me with stdout" -->
+
+<!--
+o!
+let rows = [1 2 3]
+$rows | length
+-->`}</CodeBlock>
+
+      <Paragraph>
+        {"Dispatch every directive in a file:"}
+      </Paragraph>
+
+      <CodeBlock lang="bash">{`comments dispatch notes.md`}</CodeBlock>
+
+      <Paragraph>
+        {"Preview the transformed file without writing it back:"}
+      </Paragraph>
+
+      <CodeBlock lang="bash">{`comments dispatch --stdout notes.md`}</CodeBlock>
+
+      <List>
+        <Item><Code>!script</Code> runs the script and consumes the directive comment.</Item>
+        <Item><Code>o!script</Code> runs the script and replaces the directive comment with stdout.</Item>
+        <Item>Failed directives remain unchanged.</Item>
+        <Item>Successful directives are consumed/replaced even if another directive fails.</Item>
+        <Item><Code>--stdout</Code> executes directives but prints the transformed file instead of modifying it.</Item>
+      </List>
+    </Section>
+
+    <Section title="Context">
+      <Paragraph>
+        {"Each directive script receives a structured "}
+        <Code>$context</Code>
+        {" record:"}
+      </Paragraph>
+
+      <CodeBlock lang="nu">{`$context.file                  # absolute target file path
+$context.lines                 # original file lines
+$context.directive.flags       # flag string, e.g. "o"
+$context.directive.flag_list   # flag list, e.g. ["o"]
+$context.directive.range       # ast-grep byte/line range
+$context.directive.text        # original comment text
+$context.directive.body        # normalized comment body
+$context.directive.script      # script being executed`}</CodeBlock>
+    </Section>
+
+    <Section title="Examples">
+      <List>
+        <Item><Code>examples/basic.md</Code> shows consume-only directives, output replacement, and multiline directive form.</Item>
+        <Item><Code>examples/chat.md</Code> is a recipe for sending a file-local note through the <Code>chat</Code> CLI; it is not a live directive because <Code>chat send</Code> has side effects.</Item>
+      </List>
+    </Section>
+
     <Section title="Design notes">
       <List ordered>
         <Item>Use ast-grep/tree-sitter to extract comment-like nodes where possible.</Item>
