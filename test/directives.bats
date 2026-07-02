@@ -73,3 +73,32 @@ EOF
   [ "$status" -ne 0 ]
   [[ "$output" == *"file not found"* ]]
 }
+
+@test "directives preserves multiline scripts from block comments" {
+  cat > "$BATS_TEST_TMPDIR/sample.js" <<'EOF_JS'
+/*
+!let name = "Or"
+$"hello ($name)"
+*/
+EOF_JS
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments directives sample.js
+  [ "$status" -eq 0 ]
+  expected=$'let name = "Or"\n$"hello ($name)"'
+  [ "$(printf '%s\n' "$output" | jq -r '.script')" = "$expected" ]
+}
+
+@test "directives preserves multiline scripts from Markdown comments" {
+  cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF_MD'
+<!--
+o!let rows = [1 2 3]
+$rows | length
+-->
+EOF_MD
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments directives sample.md
+  [ "$status" -eq 0 ]
+  [ "$(printf '%s\n' "$output" | jq -r '.flags')" = "o" ]
+  expected=$'let rows = [1 2 3]\n$rows | length'
+  [ "$(printf '%s\n' "$output" | jq -r '.script')" = "$expected" ]
+}
