@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+#MISE description="Extract comment-like nodes from a file"
+#MISE hide=true
+#MISE dir="{{config_root}}"
+#USAGE arg "file" help="File to scan for comments"
+#USAGE example "mise run extract README.md" header="Extract comment nodes from a file"
+set -euo pipefail
+
+file="$usage_file"
+
+case "$file" in
+  /*) target="$file" ;;
+  *) target="${COMMENTS_CALLER_PWD:-$PWD}/$file" ;;
+esac
+
+if [ ! -f "$target" ]; then
+  echo "comments extract: file not found: $file" >&2
+  exit 1
+fi
+
+# ast-grep auto-detects the language from the file extension, but tree-sitter
+# grammars do not normalize comment node names. This list scales by known
+# comment-like node kind, not by language. Add kinds here as we encounter
+# grammars whose comments use a different node name.
+kinds=(comment line_comment block_comment html_block)
+raw_matches="$(mktemp)"
+trap 'rm -f "$raw_matches"' EXIT
+
+successful_queries=0
+for kind in ${kinds[@]+"${kinds[@]}"}; do
+  if output=$(ast-grep run --kind "$kind" --json=stream "$target" 2>/dev/null); then
+    successful_queries=$((successful_queries + 1))
+    if [ -n "$output" ]; then
+      printf '%s\n' "$output" | jq -c --arg kind "$kind" '. + {kind: $kind}' >> "$raw_matches"
+    fi
+  fi
+done
+
+if [ "$successful_queries" -eq 0 ]; then
+  echo "comments extract: no known ast-grep comment node kind for file: $file" >&2
+  exit 1
+fi
+
+if [ ! -s "$raw_matches" ]; then
+  exit 0
+fi
+
+jq -c -s '
+  unique_by([.file, .range.byteOffset.start, .range.byteOffset.end])
+  | sort_by(.range.byteOffset.start)
+  | .[]
+' "$raw_matches"

@@ -81,6 +81,7 @@ function discoverTasks(dir = TASK_DIR, prefix = ""): TaskInfo[] {
     if ((mode & 0o111) === 0) continue;
 
     const src = read(full);
+    if (/^#MISE hide=true$/m.test(src)) continue;
     const description = src.match(/^#MISE description="(.+)"$/m)?.[1] ?? "";
     tasks.push({ name, description });
   }
