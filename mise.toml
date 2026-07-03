@@ -9,6 +9,9 @@ shiv = "https://github.com/KnickKnackLabs/vfox-shiv"
 [tools]
 bats = "1.13.0"
 gum = "0.17.0"
+jq = "1.8.1"
+ast-grep = "0.43.0"
+"aqua:nushell/nushell" = "0.113.1"
 "shiv:codebase" = "0.3"
 "shiv:readme" = "0.3"
 

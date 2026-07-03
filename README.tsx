@@ -28,9 +28,9 @@ import {
 } from "readme";
 
 const PROJECT = {
-  name: "template",
-  oneLine: "A sane starting point for small KnickKnackLabs tools.",
-  tagline: "Copy the boring parts so the interesting parts start sooner.",
+  name: "comments",
+  oneLine: "Harvest and consume structured directives embedded in source comments.",
+  tagline: "Turn comments into explicit, user-triggered commands.",
   license: "MIT",
 };
 
@@ -81,6 +81,7 @@ function discoverTasks(dir = TASK_DIR, prefix = ""): TaskInfo[] {
     if ((mode & 0o111) === 0) continue;
 
     const src = read(full);
+    if (/^#MISE hide=true$/m.test(src)) continue;
     const description = src.match(/^#MISE description="(.+)"$/m)?.[1] ?? "";
     tasks.push({ name, description });
   }
@@ -162,43 +163,49 @@ const readme = (
 
     <Section title="What this is">
       <Paragraph>
-        <Code>template</Code>
-        {" is the default empty room for a new KnickKnackLabs tool: mise-managed tasks, BATS tests, codebase convention lints, generated README, CI, and a "}
-        <Code>doctor</Code>
-        {" task that tells you whether your clone has the optional local pre-commit hook installed."}
+        <Code>comments</Code>
+        {" is a generic CLI for extracting structured directives from source comments, evaluating them with nushell, and optionally writing results back to disk."}
       </Paragraph>
 
       <Paragraph>
-        {"This is deliberately a normal repo, not a GitHub template repo. Copy the files, start fresh history for the new tool, and keep this repo as the living reference skeleton."}
-      </Paragraph>
-
-      <Paragraph>
-        {"It intentionally does "}
-        <Bold>not</Bold>
-        {" decide what your product does. Copy it, rename the obvious constants, then add the first real command only when the workflow is clear."}
+        {"A directive is a comment body that starts with "}
+        <Code>{"<flags>!"}</Code>
+        {". "}
+        <Code>comments</Code>
+        {" extracts those directives, evaluates the body with nushell, and can optionally replace the original comment with command output."}
       </Paragraph>
     </Section>
 
-    <Section title="Quick start">
-      <CodeBlock lang="bash">{`gh repo clone KnickKnackLabs/template my-tool
-cd my-tool
+    <Section title="Install">
+      <Paragraph>
+        {"After this package is registered with "}
+        <Link href="https://github.com/KnickKnackLabs/shiv">shiv</Link>
+        {", install it as:"}
+      </Paragraph>
 
-# Start the new tool with its own history instead of inheriting template commits.
-rm -rf .git
-git init -b main
+      <CodeBlock lang="bash">{`shiv install comments`}</CodeBlock>
+
+      <Paragraph>
+        {"Public usage examples assume the shiv-installed command name, "}
+        <Code>comments</Code>
+        {"."}
+      </Paragraph>
+    </Section>
+
+    <Section title="Working from a checkout">
+      <CodeBlock lang="bash">{`gh repo clone KnickKnackLabs/comments
+cd comments
 
 mise trust
 mise install
 mise run test
 mise run doctor
 
-# Optional local safety net: installs .git/hooks/pre-commit.d/codebase
-codebase pre-commit
+# Run commands through mise while developing from the checkout.
+mise run dispatch --stdout examples/basic.md
 
-# When the skeleton is shaped for the new tool, create and push its repo.
-git add .
-git commit -m "chore: start from KKL tool skeleton"
-gh repo create KnickKnackLabs/my-tool --public --source=. --remote=origin --push`}</CodeBlock>
+# Optional local safety net: installs .git/hooks/pre-commit.d/codebase
+codebase pre-commit`}</CodeBlock>
     </Section>
 
     <Section title="Goodies baked in">
@@ -268,14 +275,129 @@ gh repo create KnickKnackLabs/my-tool --public --source=. --remote=origin --push
       </Table>
     </Section>
 
-    <Section title="When you copy it">
+    <Section title="Usage">
+      <Paragraph>
+        {"A directive is a source comment whose normalized body starts with "}
+        <Code>!</Code>
+        {" or a known flag sequence such as "}
+        <Code>o!</Code>
+        {" followed by a Nushell script. Prose comments like "}
+        <Code>TODO!</Code>
+        {" are ignored."}
+      </Paragraph>
+
+      <CodeBlock lang="md">{`<!-- !$"run and consume me" -->
+
+<!-- o!$"replace me with stdout" -->
+
+<!--
+o!
+let rows = [1 2 3]
+$rows | length
+-->`}</CodeBlock>
+
+      <Paragraph>
+        {"In Markdown, directives must use standalone HTML block comments. Inline HTML comments such as "}
+        <Code>{`hello <!-- o!script --> world`}</Code>
+        {" are not supported yet; see "}
+        <Link href="https://github.com/KnickKnackLabs/comments/issues/3">comments#3</Link>
+        {"."}
+      </Paragraph>
+
+      <Paragraph>
+        {"In JSX/TSX, directive comments inside expression braces must be the only content in that expression. "}
+        <Code>{`{/* o!script */}`}</Code>
+        {" is supported and the full expression wrapper is consumed/replaced; "}
+        <Code>{`{/* o!script */ value}`}</Code>
+        {" fails before execution."}
+      </Paragraph>
+
+      <Paragraph>
+        {"Dispatch every directive in a file:"}
+      </Paragraph>
+
+      <CodeBlock lang="bash">{`comments dispatch notes.md`}</CodeBlock>
+
+      <Paragraph>
+        {"Execute directives and write the transformed file content to stdout instead of saving it to the target file:"}
+      </Paragraph>
+
+      <CodeBlock lang="bash">{`comments dispatch --stdout notes.md`}</CodeBlock>
+
+      <Paragraph>
+        {"Require all directive comments to succeed before applying comment transformations:"}
+      </Paragraph>
+
+      <CodeBlock lang="bash">{`comments dispatch --atomic notes.md`}</CodeBlock>
+
+      <List>
+        <Item><Code>!script</Code> runs the script and consumes the directive comment.</Item>
+        <Item><Code>o!script</Code> runs the script and replaces the directive comment with stdout.</Item>
+        <Item><Code>o</Code> is currently the only supported public flag; recognized but unsupported flags fail without consuming the directive.</Item>
+        <Item>Default dispatch is best-effort: failed directives remain unchanged, while successful directives are consumed/replaced.</Item>
+        <Item><Code>--atomic</Code> applies no comment transformations if any directive fails or is unsupported.</Item>
+        <Item>If a directive mutates the target file during normal dispatch, <Code>comments</Code> refuses to apply stale byte-range replacements.</Item>
+        <Item><Code>--stdout</Code> executes directive scripts and emits the transformed file content to stdout instead of saving comment replacements to the target file.</Item>
+      </List>
+    </Section>
+
+    <Section title="Supported files">
+      <Paragraph>
+        {"The v1 supported extension set is intentionally explicit: "}
+        <Code>.md</Code>
+        {", "}
+        <Code>.js</Code>
+        {", "}
+        <Code>.jsx</Code>
+        {", "}
+        <Code>.ts</Code>
+        {", "}
+        <Code>.tsx</Code>
+        {", "}
+        <Code>.rs</Code>
+        {", "}
+        <Code>.go</Code>
+        {", "}
+        <Code>.sh</Code>
+        {", and "}
+        <Code>.py</Code>
+        {". Unsupported extensions fail clearly instead of being treated as files with no directives. Markdown support is currently limited to standalone HTML block comments, not inline HTML comments."}
+      </Paragraph>
+    </Section>
+
+    <Section title="Context">
+      <Paragraph>
+        {"Each directive script receives a structured "}
+        <Code>$context</Code>
+        {" record:"}
+      </Paragraph>
+
+      <CodeBlock lang="nu">{`$context.file                  # absolute target file path
+$context.target_dir            # parent directory of the target file
+$context.caller_pwd            # COMMENTS_CALLER_PWD, or the dispatch cwd fallback
+$context.lines                 # original file lines
+$context.directive.flags       # flag string, e.g. "o"
+$context.directive.flag_list   # flag list, e.g. ["o"]
+$context.directive.range       # ast-grep byte/line range
+$context.directive.text        # original comment text
+$context.directive.body        # normalized comment body
+$context.directive.script      # script being executed`}</CodeBlock>
+    </Section>
+
+    <Section title="Examples">
+      <List>
+        <Item><Code>examples/basic.md</Code> shows consume-only directives, output replacement, and multiline directive form.</Item>
+        <Item><Code>examples/chat.md</Code> is a recipe for sending a file-local note through the <Code>chat</Code> CLI; it is not a live directive because <Code>chat send</Code> has side effects.</Item>
+      </List>
+    </Section>
+
+    <Section title="Design notes">
       <List ordered>
-        <Item>Rename <Code>PROJECT</Code> in <Code>README.tsx</Code>.</Item>
-        <Item>Rewrite this README around the actual tool, but keep the dynamic counters if they help.</Item>
-        <Item>Replace <Code>CONTRIBUTING.md</Code> with repo-specific orientation.</Item>
-        <Item>Add real task files under <Code>.mise/tasks/</Code>; use <Code>$MISE_CONFIG_ROOT</Code> inside tasks only.</Item>
-        <Item>Put shared Bash helpers in <Code>lib/</Code> only once multiple tasks need them.</Item>
-        <Item>If the installed tool resolves caller-relative paths, read the shiv-provided <Code>{"<PACKAGE>_CALLER_PWD"}</Code> variable, not generic <Code>CALLER_PWD</Code>.</Item>
+        <Item>Use ast-grep/tree-sitter to extract comment-like nodes where possible.</Item>
+        <Item>Recognize directives whose normalized comment body starts with <Code>{"<flags>!"}</Code>.</Item>
+        <Item>Evaluate directive bodies with nushell; context is opt-in and available at consumption time.</Item>
+        <Item>Keep the core independent of any one editor or calling workflow.</Item>
+        <Item>Write results by editing files on disk; do not require editor buffer access.</Item>
       </List>
     </Section>
 
@@ -312,7 +434,7 @@ git diff --check`}</CodeBlock>
         <Link href="https://github.com/KnickKnackLabs/readme">KnickKnackLabs/readme</Link>
         {"."}
         <Raw>{"<br />"}</Raw>
-        {"A skeleton is a kindness to whoever has to remember the boring parts tomorrow."}
+        {"Comments are executable only when a human chooses to consume them."}
       </Sub>
     </Center>
   </>

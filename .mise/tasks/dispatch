@@ -1,0 +1,127 @@
+#!/usr/bin/env nu
+#MISE description="Dispatch comment directives in a file"
+#MISE dir="{{config_root}}"
+#USAGE flag "--stdout" default=#false help="Execute directives and emit transformed file content to stdout instead of saving replacements"
+#USAGE flag "--atomic" default=#false help="Apply no comment transformations if any directive fails or is unsupported"
+#USAGE arg "file" help="File whose directives should be dispatched"
+#USAGE example "mise run dispatch README.md" header="Dispatch directives in a file"
+#USAGE example "mise run dispatch --stdout README.md" header="Emit transformed file content to stdout"
+
+use ../../lib/comments/extract.nu [extract-comments is-supported-target resolve-target supported-extension-message]
+use ../../lib/comments/directives.nu directive-from-comment
+use ../../lib/comments/dispatch.nu [apply-replacements-to-content context-for-directive directive-writes-output duplicate-flags replacement-for-directive run-directive unsupported-flags unsupported-jsx-expression-comment]
+
+let file = $env.usage_file
+let stdout = ($env.usage_stdout == "true")
+let atomic = ($env.usage_atomic == "true")
+let base = ($env.COMMENTS_CALLER_PWD? | default $env.PWD)
+let target = (resolve-target $file $base)
+
+if (($target | path type) != "file") {
+  print -e $"comments dispatch: file not found: ($file)"
+  exit 1
+}
+
+if not (is-supported-target $target) {
+  print -e $"comments dispatch: (supported-extension-message $target)"
+  exit 1
+}
+
+let original_content = (open --raw $target)
+let comments = (extract-comments $target)
+let directives = (
+  $comments
+  | each {|comment| directive-from-comment $comment }
+  | where {|directive| $directive != null }
+)
+
+mut replacements = []
+mut failures = []
+
+for directive in $directives {
+  let duplicates = (duplicate-flags $directive)
+  if (($duplicates | length) > 0) {
+    $failures = ($failures | append {
+      directive: $directive,
+      status: 1,
+      stderr: $"comments dispatch: duplicate directive flags: ($duplicates | str join '')\n",
+    })
+    continue
+  }
+
+  let unsupported = (unsupported-flags $directive)
+  if (($unsupported | length) > 0) {
+    $failures = ($failures | append {
+      directive: $directive,
+      status: 1,
+      stderr: $"comments dispatch: unsupported directive flags: ($unsupported | str join '')\n",
+    })
+    continue
+  }
+
+  let jsx_expression_error = (unsupported-jsx-expression-comment $original_content $directive)
+  if ($jsx_expression_error != null) {
+    $failures = ($failures | append {
+      directive: $directive,
+      status: 1,
+      stderr: $jsx_expression_error,
+    })
+    continue
+  }
+
+  let context = (context-for-directive $target $original_content $base $directive)
+  let result = (run-directive $context)
+
+  if ($result.exit_code == 0) {
+    let replacement_output = if (directive-writes-output $directive) {
+      $result.stdout
+    } else {
+      ""
+    }
+    $replacements = ($replacements | append (replacement-for-directive $original_content $directive $replacement_output))
+
+    if ($result.stderr | is-not-empty) {
+      print -e -n $result.stderr
+    }
+  } else {
+    $failures = ($failures | append {
+      directive: $directive,
+      status: $result.exit_code,
+      stderr: $result.stderr,
+    })
+  }
+}
+
+let current_content = (open --raw $target)
+let target_changed = ($current_content != $original_content)
+if $target_changed and ((not $stdout) or $atomic) {
+  $failures = ($failures | append {
+    directive: null,
+    status: 1,
+    stderr: "comments dispatch: target file changed during dispatch; refusing to apply stale replacements\n",
+  })
+}
+
+if (($failures | length) == 0) {
+  if $stdout {
+    print -n (apply-replacements-to-content $original_content $replacements)
+  } else if (($replacements | length) > 0) {
+    apply-replacements-to-content $original_content $replacements | save --force $target
+  }
+} else if not $atomic {
+  if $stdout {
+    print -n (apply-replacements-to-content $original_content $replacements)
+  } else if (($replacements | length) > 0) and (not $target_changed) {
+    apply-replacements-to-content $original_content $replacements | save --force $target
+  }
+}
+
+if (($failures | length) > 0) {
+  for failure in $failures {
+    if ($failure.stderr | is-not-empty) {
+      print -e -n $failure.stderr
+    }
+  }
+
+  exit ($failures | get status | math max)
+}
