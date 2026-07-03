@@ -103,7 +103,7 @@ Dispatch every directive in a file:
 comments dispatch notes.md
 ```
 
-Preview the transformed file without writing it back:
+Execute directives and write the transformed file content to stdout instead of saving it to the target file:
 
 ```bash
 comments dispatch --stdout notes.md
@@ -115,7 +115,7 @@ comments dispatch --stdout notes.md
 - Failed directives remain unchanged.
 - Successful directives are consumed/replaced even if another directive fails.
 - If a directive mutates the target file during normal dispatch, `comments` refuses to apply stale byte-range replacements.
-- `--stdout` executes directives but prints the transformed file instead of modifying it.
+- `--stdout` executes directive scripts and emits the transformed file content to stdout instead of saving comment replacements to the target file.
 
 ## Supported files
 

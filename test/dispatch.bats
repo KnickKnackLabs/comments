@@ -136,7 +136,7 @@ EOF
   [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "3" ]
 }
 
-@test "dispatch --stdout previews transformed content without modifying the file" {
+@test "dispatch --stdout emits transformed content without saving comment replacements" {
   cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
 before
 <!-- !$"consume me" -->
@@ -152,7 +152,7 @@ EOF
   [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "$original" ]
 }
 
-@test "dispatch --stdout leaves failed directives unchanged in preview" {
+@test "dispatch --stdout leaves failed directives unchanged in emitted content" {
   cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
 <!-- o!$"first" -->
 <!-- o!exit 7 -->

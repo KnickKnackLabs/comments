@@ -4,7 +4,7 @@
 #USAGE flag "--stdout" default=#false help="Print the transformed file to stdout instead of writing it back"
 #USAGE arg "file" help="File whose directives should be dispatched"
 #USAGE example "mise run dispatch README.md" header="Dispatch directives in a file"
-#USAGE example "mise run dispatch --stdout README.md" header="Preview transformed file content"
+#USAGE example "mise run dispatch --stdout README.md" header="Emit transformed file content to stdout"
 
 use ../../lib/comments/extract.nu [extract-comments is-supported-target resolve-target supported-extension-message]
 use ../../lib/comments/directives.nu directive-from-comment

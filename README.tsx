@@ -303,7 +303,7 @@ $rows | length
       <CodeBlock lang="bash">{`comments dispatch notes.md`}</CodeBlock>
 
       <Paragraph>
-        {"Preview the transformed file without writing it back:"}
+        {"Execute directives and write the transformed file content to stdout instead of saving it to the target file:"}
       </Paragraph>
 
       <CodeBlock lang="bash">{`comments dispatch --stdout notes.md`}</CodeBlock>
@@ -315,7 +315,7 @@ $rows | length
         <Item>Failed directives remain unchanged.</Item>
         <Item>Successful directives are consumed/replaced even if another directive fails.</Item>
         <Item>If a directive mutates the target file during normal dispatch, <Code>comments</Code> refuses to apply stale byte-range replacements.</Item>
-        <Item><Code>--stdout</Code> executes directives but prints the transformed file instead of modifying it.</Item>
+        <Item><Code>--stdout</Code> executes directive scripts and emits the transformed file content to stdout instead of saving comment replacements to the target file.</Item>
       </List>
     </Section>
 

@@ -1,6 +1,6 @@
 # Basic comments example
 
-Run a preview without modifying this file:
+Execute directives and emit the transformed file content to stdout instead of saving changes to this file:
 
 ```bash
 comments dispatch --stdout examples/basic.md
