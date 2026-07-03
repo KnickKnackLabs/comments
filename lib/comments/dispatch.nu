@@ -35,11 +35,37 @@ export def run-directive [context: record] {
   }
 }
 
-export def replacement-for-directive [directive: record, output: string] {
-  {
+export def replacement-for-directive [content: string, directive: record, output: string] {
+  let replacement = {
     start: $directive.range.byteOffset.start,
     end: $directive.range.byteOffset.end,
     output: $output,
+  }
+
+  expand-jsx-expression-comment-replacement $content $directive $replacement
+}
+
+export def expand-jsx-expression-comment-replacement [content: string, directive: record, replacement: record] {
+  let extension = ($directive.file | path parse | get extension | str downcase)
+  if not ($extension in [jsx tsx]) {
+    return $replacement
+  }
+
+  if not ($directive.text | str trim | str starts-with "/*") {
+    return $replacement
+  }
+
+  let previous = if $replacement.start == 0 {
+    ""
+  } else {
+    $content | str substring ($replacement.start - 1)..<$replacement.start
+  }
+  let next = ($content | str substring $replacement.end..<($replacement.end + 1))
+
+  if ($previous == "{" and $next == "}") {
+    $replacement | upsert start ($replacement.start - 1) | upsert end ($replacement.end + 1)
+  } else {
+    $replacement
   }
 }
 

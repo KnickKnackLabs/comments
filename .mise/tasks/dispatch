@@ -68,7 +68,7 @@ for directive in $directives {
     } else {
       ""
     }
-    $replacements = ($replacements | append (replacement-for-directive $directive $replacement_output))
+    $replacements = ($replacements | append (replacement-for-directive $original_content $directive $replacement_output))
 
     if ($result.stderr | is-not-empty) {
       print -e -n $result.stderr

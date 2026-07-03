@@ -181,6 +181,26 @@ EOF
   [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "3" ]
 }
 
+@test "dispatch replaces the full JSX expression comment wrapper" {
+  cat > "$BATS_TEST_TMPDIR/sample.tsx" <<'EOF'
+export const Demo = () => <div>{/* o!print -n "hello" */}</div>
+EOF
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch sample.tsx
+  [ "$status" -eq 0 ]
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.tsx")" = 'export const Demo = () => <div>hello</div>' ]
+}
+
+@test "dispatch consumes the full JSX expression comment wrapper" {
+  cat > "$BATS_TEST_TMPDIR/sample.jsx" <<'EOF'
+export const Demo = () => <div>{/* !"side effect" */}</div>
+EOF
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch sample.jsx
+  [ "$status" -eq 0 ]
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.jsx")" = 'export const Demo = () => <div></div>' ]
+}
+
 @test "dispatch --stdout emits transformed content without saving comment replacements" {
   cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
 before
