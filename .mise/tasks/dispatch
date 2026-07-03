@@ -1,7 +1,8 @@
 #!/usr/bin/env nu
 #MISE description="Dispatch comment directives in a file"
 #MISE dir="{{config_root}}"
-#USAGE flag "--stdout" default=#false help="Print the transformed file to stdout instead of writing it back"
+#USAGE flag "--stdout" default=#false help="Execute directives and emit transformed file content to stdout instead of saving replacements"
+#USAGE flag "--atomic" default=#false help="Apply no comment transformations if any directive fails or is unsupported"
 #USAGE arg "file" help="File whose directives should be dispatched"
 #USAGE example "mise run dispatch README.md" header="Dispatch directives in a file"
 #USAGE example "mise run dispatch --stdout README.md" header="Emit transformed file content to stdout"
@@ -12,6 +13,7 @@ use ../../lib/comments/dispatch.nu [apply-replacements-to-content context-for-di
 
 let file = $env.usage_file
 let stdout = ($env.usage_stdout == "true")
+let atomic = ($env.usage_atomic == "true")
 let base = ($env.COMMENTS_CALLER_PWD? | default $env.PWD)
 let target = (resolve-target $file $base)
 
@@ -70,16 +72,28 @@ for directive in $directives {
   }
 }
 
-if $stdout {
-  print -n (apply-replacements-to-content $original_content $replacements)
-} else if (($replacements | length) > 0) {
-  let current_content = (open --raw $target)
-  if $current_content != $original_content {
-    print -e "comments dispatch: target file changed during dispatch; refusing to apply stale replacements"
-    exit 1
-  }
+let current_content = (open --raw $target)
+let target_changed = ($current_content != $original_content)
+if $target_changed and ((not $stdout) or $atomic) {
+  $failures = ($failures | append {
+    directive: null,
+    status: 1,
+    stderr: "comments dispatch: target file changed during dispatch; refusing to apply stale replacements\n",
+  })
+}
 
-  apply-replacements-to-content $original_content $replacements | save --force $target
+if (($failures | length) == 0) {
+  if $stdout {
+    print -n (apply-replacements-to-content $original_content $replacements)
+  } else if (($replacements | length) > 0) {
+    apply-replacements-to-content $original_content $replacements | save --force $target
+  }
+} else if not $atomic {
+  if $stdout {
+    print -n (apply-replacements-to-content $original_content $replacements)
+  } else if (($replacements | length) > 0) and (not $target_changed) {
+    apply-replacements-to-content $original_content $replacements | save --force $target
+  }
 }
 
 if (($failures | length) > 0) {

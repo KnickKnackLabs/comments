@@ -202,6 +202,21 @@ EOF
   [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "$original" ]
 }
 
+@test "dispatch --stdout --atomic emits no transformed content when a directive fails" {
+  cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
+<!-- o!$"first" -->
+<!-- o!exit 7 -->
+<!-- o!$"third" -->
+EOF
+  original="$(cat "$BATS_TEST_TMPDIR/sample.md")"
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch --stdout --atomic sample.md
+  [ "$status" -eq 7 ]
+  [[ "$output" != *"first"* ]]
+  [[ "$output" != *"third"* ]]
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "$original" ]
+}
+
 @test "dispatch replaces output directives with stdout" {
   cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
 before
@@ -290,6 +305,19 @@ EOF
   [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "$expected" ]
 }
 
+@test "dispatch --atomic applies replacements when all directives succeed" {
+  cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
+<!-- o!$"first" -->
+middle
+<!-- o!$"second" -->
+EOF
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch --atomic sample.md
+  [ "$status" -eq 0 ]
+  expected=$'first\nmiddle\nsecond'
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "$expected" ]
+}
+
 @test "dispatch leaves failing output directives unchanged" {
   cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
 before
@@ -316,6 +344,19 @@ EOF
   [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "$expected" ]
 }
 
+@test "dispatch --atomic leaves all directives unchanged when one fails" {
+  cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
+<!-- o!$"first" -->
+<!-- o!exit 7 -->
+<!-- o!$"third" -->
+EOF
+  original="$(cat "$BATS_TEST_TMPDIR/sample.md")"
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch --atomic sample.md
+  [ "$status" -eq 7 ]
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "$original" ]
+}
+
 @test "dispatch continues after unsupported flags and applies other successful replacements" {
   cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
 <!-- o!$"first" -->
@@ -328,6 +369,20 @@ EOF
   [[ "$output" == *"unsupported directive flags: i"* ]]
   expected=$'first\n<!-- i!$"unsupported" -->\nthird'
   [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "$expected" ]
+}
+
+@test "dispatch --atomic leaves all directives unchanged on unsupported flags" {
+  cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
+<!-- o!$"first" -->
+<!-- i!$"unsupported" -->
+<!-- o!$"third" -->
+EOF
+  original="$(cat "$BATS_TEST_TMPDIR/sample.md")"
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch --atomic sample.md
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"unsupported directive flags: i"* ]]
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "$original" ]
 }
 
 @test "dispatch rejects unsupported non-output flags" {
@@ -347,6 +402,18 @@ EOF
 EOF
 
   COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch sample.md
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"target file changed during dispatch"* ]]
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "SIDE" ]
+}
+
+@test "dispatch --atomic refuses stale replacements if a directive mutates the target file" {
+  cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
+<!-- !"SIDE" | save --force $context.file -->
+<!-- o!$"replacement" -->
+EOF
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch --atomic sample.md
   [ "$status" -ne 0 ]
   [[ "$output" == *"target file changed during dispatch"* ]]
   [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "SIDE" ]

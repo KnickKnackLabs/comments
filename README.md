@@ -7,7 +7,7 @@
 Turn comments into explicit, user-triggered commands.
 
 ![shape: mise + BATS](https://img.shields.io/badge/shape-mise%20%2B%20BATS-4EAA25?style=flat&logo=gnubash&logoColor=white)
-[![tests: 91](https://img.shields.io/badge/tests-91-brightgreen?style=flat)](test/)
+[![tests: 96](https://img.shields.io/badge/tests-96-brightgreen?style=flat)](test/)
 ![lints: 9](https://img.shields.io/badge/lints-9-blue?style=flat)
 ![README: TSX](https://img.shields.io/badge/README-TSX-f472b6?style=flat)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat)](LICENSE)
@@ -109,11 +109,17 @@ Execute directives and write the transformed file content to stdout instead of s
 comments dispatch --stdout notes.md
 ```
 
+Require all directive comments to succeed before applying comment transformations:
+
+```bash
+comments dispatch --atomic notes.md
+```
+
 - `!script` runs the script and consumes the directive comment.
 - `o!script` runs the script and replaces the directive comment with stdout.
 - `o` is currently the only supported public flag; recognized but unsupported flags fail without consuming the directive.
-- Failed directives remain unchanged.
-- Successful directives are consumed/replaced even if another directive fails.
+- Default dispatch is best-effort: failed directives remain unchanged, while successful directives are consumed/replaced.
+- `--atomic` applies no comment transformations if any directive fails or is unsupported.
 - If a directive mutates the target file during normal dispatch, `comments` refuses to apply stale byte-range replacements.
 - `--stdout` executes directive scripts and emits the transformed file content to stdout instead of saving comment replacements to the target file.
 
@@ -179,7 +185,7 @@ readme build --check
 git diff --check
 ```
 
-The starter suite currently has **91 tests** and **3 public tasks**. Those numbers are read from the repo at README build time.
+The starter suite currently has **96 tests** and **3 public tasks**. Those numbers are read from the repo at README build time.
 
 <div align="center">
 

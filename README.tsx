@@ -308,12 +308,18 @@ $rows | length
 
       <CodeBlock lang="bash">{`comments dispatch --stdout notes.md`}</CodeBlock>
 
+      <Paragraph>
+        {"Require all directive comments to succeed before applying comment transformations:"}
+      </Paragraph>
+
+      <CodeBlock lang="bash">{`comments dispatch --atomic notes.md`}</CodeBlock>
+
       <List>
         <Item><Code>!script</Code> runs the script and consumes the directive comment.</Item>
         <Item><Code>o!script</Code> runs the script and replaces the directive comment with stdout.</Item>
         <Item><Code>o</Code> is currently the only supported public flag; recognized but unsupported flags fail without consuming the directive.</Item>
-        <Item>Failed directives remain unchanged.</Item>
-        <Item>Successful directives are consumed/replaced even if another directive fails.</Item>
+        <Item>Default dispatch is best-effort: failed directives remain unchanged, while successful directives are consumed/replaced.</Item>
+        <Item><Code>--atomic</Code> applies no comment transformations if any directive fails or is unsupported.</Item>
         <Item>If a directive mutates the target file during normal dispatch, <Code>comments</Code> refuses to apply stale byte-range replacements.</Item>
         <Item><Code>--stdout</Code> executes directive scripts and emits the transformed file content to stdout instead of saving comment replacements to the target file.</Item>
       </List>
