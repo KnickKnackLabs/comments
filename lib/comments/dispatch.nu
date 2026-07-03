@@ -10,6 +10,14 @@ export def context-for-directive [target: string, content: string, caller_pwd: s
   }
 }
 
+export def duplicate-flags [directive: record] {
+  $directive.flag_list
+  | group-by
+  | transpose flag values
+  | where {|row| ($row.values | length) > 1 }
+  | get flag
+}
+
 export def unsupported-flags [directive: record] {
   $directive.flag_list | where {|flag| $flag != "o" }
 }

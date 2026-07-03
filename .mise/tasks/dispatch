@@ -9,7 +9,7 @@
 
 use ../../lib/comments/extract.nu [extract-comments is-supported-target resolve-target supported-extension-message]
 use ../../lib/comments/directives.nu directive-from-comment
-use ../../lib/comments/dispatch.nu [apply-replacements-to-content context-for-directive directive-writes-output replacement-for-directive run-directive unsupported-flags]
+use ../../lib/comments/dispatch.nu [apply-replacements-to-content context-for-directive directive-writes-output duplicate-flags replacement-for-directive run-directive unsupported-flags]
 
 let file = $env.usage_file
 let stdout = ($env.usage_stdout == "true")
@@ -39,6 +39,16 @@ mut replacements = []
 mut failures = []
 
 for directive in $directives {
+  let duplicates = (duplicate-flags $directive)
+  if (($duplicates | length) > 0) {
+    $failures = ($failures | append {
+      directive: $directive,
+      status: 1,
+      stderr: $"comments dispatch: duplicate directive flags: ($duplicates | str join '')\n",
+    })
+    continue
+  }
+
   let unsupported = (unsupported-flags $directive)
   if (($unsupported | length) > 0) {
     $failures = ($failures | append {

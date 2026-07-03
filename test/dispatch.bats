@@ -395,6 +395,33 @@ EOF
   [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "$original" ]
 }
 
+@test "dispatch rejects duplicate flags and leaves that directive unchanged" {
+  cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
+<!-- o!$"first" -->
+<!-- oo!$"duplicate" -->
+<!-- o!$"third" -->
+EOF
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch sample.md
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"duplicate directive flags: o"* ]]
+  expected=$'first\n<!-- oo!$"duplicate" -->\nthird'
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "$expected" ]
+}
+
+@test "dispatch --atomic leaves all directives unchanged on duplicate flags" {
+  cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
+<!-- o!$"first" -->
+<!-- oo!$"duplicate" -->
+EOF
+  original="$(cat "$BATS_TEST_TMPDIR/sample.md")"
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch --atomic sample.md
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"duplicate directive flags: o"* ]]
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "$original" ]
+}
+
 @test "dispatch rejects unsupported non-output flags" {
   cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
 <!-- i!$"hello" -->

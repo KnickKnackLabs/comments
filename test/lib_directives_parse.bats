@@ -69,3 +69,10 @@ load test_helper
   [ "$(printf '%s\n' "$output" | jq -r '.flags')" = "oi" ]
   [ "$(printf '%s\n' "$output" | jq -r '.flag_list | join(",")')" = "o,i" ]
 }
+
+@test "parse-directive preserves duplicate flags for dispatch validation" {
+  run comments_nu 'use ./lib/comments/directives.nu parse-directive; parse-directive "oo!echo hi" | to json -r'
+  [ "$status" -eq 0 ]
+  [ "$(printf '%s\n' "$output" | jq -r '.flags')" = "oo" ]
+  [ "$(printf '%s\n' "$output" | jq -r '.flag_list | join(",")')" = "o,o" ]
+}
