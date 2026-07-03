@@ -121,6 +121,41 @@ EOF
   [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "$expected" ]
 }
 
+@test "dispatch runs directive scripts from the target file directory" {
+  mkdir -p "$BATS_TEST_TMPDIR/sub"
+  cat > "$BATS_TEST_TMPDIR/sub/sample.md" <<'EOF'
+<!-- o!pwd -->
+EOF
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch sub/sample.md
+  [ "$status" -eq 0 ]
+  [ "$(cat "$BATS_TEST_TMPDIR/sub/sample.md")" = "$BATS_TEST_TMPDIR/sub" ]
+}
+
+@test "dispatch resolves relative paths from the target file directory" {
+  mkdir -p "$BATS_TEST_TMPDIR/sub"
+  printf 'neighbor text' > "$BATS_TEST_TMPDIR/sub/neighbor.txt"
+  cat > "$BATS_TEST_TMPDIR/sub/sample.md" <<'EOF'
+<!-- o!open neighbor.txt -->
+EOF
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch sub/sample.md
+  [ "$status" -eq 0 ]
+  [ "$(cat "$BATS_TEST_TMPDIR/sub/sample.md")" = "neighbor text" ]
+}
+
+@test "dispatch exposes target_dir and caller_pwd in context" {
+  mkdir -p "$BATS_TEST_TMPDIR/sub"
+  caller_base="$(basename "$BATS_TEST_TMPDIR")"
+  cat > "$BATS_TEST_TMPDIR/sub/sample.md" <<'EOF'
+<!-- o!$"target=($context.target_dir | path basename) caller=($context.caller_pwd | path basename)" -->
+EOF
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch sub/sample.md
+  [ "$status" -eq 0 ]
+  [ "$(cat "$BATS_TEST_TMPDIR/sub/sample.md")" = "target=sub caller=$caller_base" ]
+}
+
 @test "dispatch supports multiline directive scripts" {
   cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
 <!--

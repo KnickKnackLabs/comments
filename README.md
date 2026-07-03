@@ -7,7 +7,7 @@
 Turn comments into explicit, user-triggered commands.
 
 ![shape: mise + BATS](https://img.shields.io/badge/shape-mise%20%2B%20BATS-4EAA25?style=flat&logo=gnubash&logoColor=white)
-[![tests: 87](https://img.shields.io/badge/tests-87-brightgreen?style=flat)](test/)
+[![tests: 91](https://img.shields.io/badge/tests-91-brightgreen?style=flat)](test/)
 ![lints: 9](https://img.shields.io/badge/lints-9-blue?style=flat)
 ![README: TSX](https://img.shields.io/badge/README-TSX-f472b6?style=flat)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat)](LICENSE)
@@ -127,6 +127,8 @@ Each directive script receives a structured `$context` record:
 
 ```nu
 $context.file                  # absolute target file path
+$context.target_dir            # parent directory of the target file
+$context.caller_pwd            # COMMENTS_CALLER_PWD, or the dispatch cwd fallback
 $context.lines                 # original file lines
 $context.directive.flags       # flag string, e.g. "o"
 $context.directive.flag_list   # flag list, e.g. ["o"]
@@ -177,7 +179,7 @@ readme build --check
 git diff --check
 ```
 
-The starter suite currently has **87 tests** and **3 public tasks**. Those numbers are read from the repo at README build time.
+The starter suite currently has **91 tests** and **3 public tasks**. Those numbers are read from the repo at README build time.
 
 <div align="center">
 

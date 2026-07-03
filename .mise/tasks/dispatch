@@ -47,7 +47,7 @@ for directive in $directives {
     continue
   }
 
-  let context = (context-for-directive $target $original_content $directive)
+  let context = (context-for-directive $target $original_content $base $directive)
   let result = (run-directive $context)
 
   if ($result.exit_code == 0) {

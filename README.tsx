@@ -351,6 +351,8 @@ $rows | length
       </Paragraph>
 
       <CodeBlock lang="nu">{`$context.file                  # absolute target file path
+$context.target_dir            # parent directory of the target file
+$context.caller_pwd            # COMMENTS_CALLER_PWD, or the dispatch cwd fallback
 $context.lines                 # original file lines
 $context.directive.flags       # flag string, e.g. "o"
 $context.directive.flag_list   # flag list, e.g. ["o"]
