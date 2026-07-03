@@ -35,11 +35,78 @@ export def run-directive [context: record] {
   }
 }
 
-export def replacement-for-directive [directive: record, output: string] {
+export def jsx-expression-comment-wrapper [content: string, directive: record] {
+  let extension = ($directive.file | path parse | get extension | str downcase)
+  if not ($extension in [jsx tsx]) {
+    return null
+  }
+
+  if not ($directive.text | str trim | str starts-with "/*") {
+    return null
+  }
+
+  let start = $directive.range.byteOffset.start
+  let end = $directive.range.byteOffset.end
+  let before = if $start == 0 {
+    ""
+  } else {
+    $content | str substring 0..<$start
+  }
+  let after = ($content | str substring $end..)
+  let before_trimmed = ($before | str replace -r '\s+$' '')
+  let after_trimmed = ($after | str replace -r '^\s+' '')
+  let before_len = ($before_trimmed | str length)
+  let after_ws_len = (($after | str length) - ($after_trimmed | str length))
+  let previous = if $before_len == 0 {
+    ""
+  } else {
+    $before_trimmed | str substring ($before_len - 1)..<$before_len
+  }
+  let next = if (($after_trimmed | str length) == 0) {
+    ""
+  } else {
+    $after_trimmed | str substring 0..<1
+  }
+
+  if not (($previous == "{") or ($next == "}")) {
+    return null
+  }
+
+  let wrapper_start = if $previous == "{" { $before_len - 1 } else { $start }
+  let wrapper_end = if $next == "}" { $end + $after_ws_len + 1 } else { $end }
+
   {
+    standalone: (($previous == "{") and ($next == "}")),
+    start: $wrapper_start,
+    end: $wrapper_end,
+  }
+}
+
+export def unsupported-jsx-expression-comment [content: string, directive: record] {
+  let wrapper = (jsx-expression-comment-wrapper $content $directive)
+  if ($wrapper == null) {
+    return null
+  }
+
+  if $wrapper.standalone {
+    null
+  } else {
+    "comments dispatch: JSX/TSX directive comments inside expression braces must be the only content in the expression\n"
+  }
+}
+
+export def replacement-for-directive [content: string, directive: record, output: string] {
+  let replacement = {
     start: $directive.range.byteOffset.start,
     end: $directive.range.byteOffset.end,
     output: $output,
+  }
+  let wrapper = (jsx-expression-comment-wrapper $content $directive)
+
+  if (($wrapper != null) and $wrapper.standalone) {
+    $replacement | upsert start $wrapper.start | upsert end $wrapper.end
+  } else {
+    $replacement
   }
 }
 

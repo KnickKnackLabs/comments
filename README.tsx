@@ -305,6 +305,14 @@ $rows | length
       </Paragraph>
 
       <Paragraph>
+        {"In JSX/TSX, directive comments inside expression braces must be the only content in that expression. "}
+        <Code>{`{/* o!script */}`}</Code>
+        {" is supported and the full expression wrapper is consumed/replaced; "}
+        <Code>{`{/* o!script */ value}`}</Code>
+        {" fails before execution."}
+      </Paragraph>
+
+      <Paragraph>
         {"Dispatch every directive in a file:"}
       </Paragraph>
 

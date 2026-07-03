@@ -7,7 +7,7 @@
 Turn comments into explicit, user-triggered commands.
 
 ![shape: mise + BATS](https://img.shields.io/badge/shape-mise%20%2B%20BATS-4EAA25?style=flat&logo=gnubash&logoColor=white)
-[![tests: 103](https://img.shields.io/badge/tests-103-brightgreen?style=flat)](test/)
+[![tests: 108](https://img.shields.io/badge/tests-108-brightgreen?style=flat)](test/)
 ![lints: 9](https://img.shields.io/badge/lints-9-blue?style=flat)
 ![README: TSX](https://img.shields.io/badge/README-TSX-f472b6?style=flat)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat)](LICENSE)
@@ -99,6 +99,8 @@ $rows | length
 
 In Markdown, directives must use standalone HTML block comments. Inline HTML comments such as `hello <!-- o!script --> world` are not supported yet; see [comments#3](https://github.com/KnickKnackLabs/comments/issues/3).
 
+In JSX/TSX, directive comments inside expression braces must be the only content in that expression. `{/* o!script */}` is supported and the full expression wrapper is consumed/replaced; `{/* o!script */ value}` fails before execution.
+
 Dispatch every directive in a file:
 
 ```bash
@@ -187,7 +189,7 @@ readme build --check
 git diff --check
 ```
 
-The starter suite currently has **103 tests** and **3 public tasks**. Those numbers are read from the repo at README build time.
+The starter suite currently has **108 tests** and **3 public tasks**. Those numbers are read from the repo at README build time.
 
 <div align="center">
 

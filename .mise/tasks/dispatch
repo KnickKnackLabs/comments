@@ -9,7 +9,7 @@
 
 use ../../lib/comments/extract.nu [extract-comments is-supported-target resolve-target supported-extension-message]
 use ../../lib/comments/directives.nu directive-from-comment
-use ../../lib/comments/dispatch.nu [apply-replacements-to-content context-for-directive directive-writes-output duplicate-flags replacement-for-directive run-directive unsupported-flags]
+use ../../lib/comments/dispatch.nu [apply-replacements-to-content context-for-directive directive-writes-output duplicate-flags replacement-for-directive run-directive unsupported-flags unsupported-jsx-expression-comment]
 
 let file = $env.usage_file
 let stdout = ($env.usage_stdout == "true")
@@ -59,6 +59,16 @@ for directive in $directives {
     continue
   }
 
+  let jsx_expression_error = (unsupported-jsx-expression-comment $original_content $directive)
+  if ($jsx_expression_error != null) {
+    $failures = ($failures | append {
+      directive: $directive,
+      status: 1,
+      stderr: $jsx_expression_error,
+    })
+    continue
+  }
+
   let context = (context-for-directive $target $original_content $base $directive)
   let result = (run-directive $context)
 
@@ -68,7 +78,7 @@ for directive in $directives {
     } else {
       ""
     }
-    $replacements = ($replacements | append (replacement-for-directive $directive $replacement_output))
+    $replacements = ($replacements | append (replacement-for-directive $original_content $directive $replacement_output))
 
     if ($result.stderr | is-not-empty) {
       print -e -n $result.stderr

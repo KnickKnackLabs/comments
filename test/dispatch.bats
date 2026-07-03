@@ -181,6 +181,61 @@ EOF
   [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "3" ]
 }
 
+@test "dispatch replaces the full JSX expression comment wrapper" {
+  cat > "$BATS_TEST_TMPDIR/sample.tsx" <<'EOF'
+export const Demo = () => <div>{/* o!print -n "hello" */}</div>
+EOF
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch sample.tsx
+  [ "$status" -eq 0 ]
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.tsx")" = 'export const Demo = () => <div>hello</div>' ]
+}
+
+@test "dispatch replaces a whitespace-padded JSX expression comment wrapper" {
+  cat > "$BATS_TEST_TMPDIR/sample.tsx" <<'EOF'
+export const Demo = () => <div>{ /* o!print -n "hello" */ }</div>
+EOF
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch sample.tsx
+  [ "$status" -eq 0 ]
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.tsx")" = 'export const Demo = () => <div>hello</div>' ]
+}
+
+@test "dispatch consumes the full JSX expression comment wrapper" {
+  cat > "$BATS_TEST_TMPDIR/sample.jsx" <<'EOF'
+export const Demo = () => <div>{/* !"side effect" */}</div>
+EOF
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch sample.jsx
+  [ "$status" -eq 0 ]
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.jsx")" = 'export const Demo = () => <div></div>' ]
+}
+
+@test "dispatch rejects mixed-content JSX expression directive comments before execution" {
+  cat > "$BATS_TEST_TMPDIR/sample.tsx" <<'EOF'
+export const Demo = () => <div>{/* !"ran" | save --force side.txt */ value}</div>
+EOF
+  original="$(cat "$BATS_TEST_TMPDIR/sample.tsx")"
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch sample.tsx
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"must be the only content in the expression"* ]]
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.tsx")" = "$original" ]
+  [ ! -e "$BATS_TEST_TMPDIR/side.txt" ]
+}
+
+@test "dispatch still supports non-JSX TSX block directives" {
+  cat > "$BATS_TEST_TMPDIR/sample.tsx" <<'EOF'
+/* o!print -n "hello" */
+export const value = 1
+EOF
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch sample.tsx
+  [ "$status" -eq 0 ]
+  expected=$'hello\nexport const value = 1'
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.tsx")" = "$expected" ]
+}
+
 @test "dispatch --stdout emits transformed content without saving comment replacements" {
   cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
 before
