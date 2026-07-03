@@ -30,7 +30,7 @@ EOF
   [ "$(printf '%s\n' "$output" | jq -r '.script')" = "curl https://example.com" ]
 }
 
-@test "directives parses single-line Markdown HTML comments" {
+@test "directives parses standalone single-line Markdown HTML block comments" {
   cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
 <!-- o!echo "hello" -->
 EOF
@@ -64,6 +64,16 @@ console.log('x')
 EOF
 
   COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments directives sample.js
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+}
+
+@test "directives ignores Markdown inline HTML comments" {
+  cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
+hello <!-- o!print -n "X" --> world
+EOF
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments directives sample.md
   [ "$status" -eq 0 ]
   [ -z "$output" ]
 }

@@ -297,6 +297,14 @@ $rows | length
 -->`}</CodeBlock>
 
       <Paragraph>
+        {"In Markdown, directives must use standalone HTML block comments. Inline HTML comments such as "}
+        <Code>{`hello <!-- o!script --> world`}</Code>
+        {" are not supported yet; see "}
+        <Link href="https://github.com/KnickKnackLabs/comments/issues/3">comments#3</Link>
+        {"."}
+      </Paragraph>
+
+      <Paragraph>
         {"Dispatch every directive in a file:"}
       </Paragraph>
 
@@ -345,7 +353,7 @@ $rows | length
         <Code>.sh</Code>
         {", and "}
         <Code>.py</Code>
-        {". Unsupported extensions fail clearly instead of being treated as files with no directives."}
+        {". Unsupported extensions fail clearly instead of being treated as files with no directives. Markdown support is currently limited to standalone HTML block comments, not inline HTML comments."}
       </Paragraph>
     </Section>
 

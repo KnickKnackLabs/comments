@@ -40,6 +40,16 @@ EOF
   [ "$output" = "$expected" ]
 }
 
+@test "dispatch --stdout leaves Markdown inline HTML comments unchanged" {
+  cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
+hello <!-- o!print -n "X" --> world
+EOF
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch --stdout sample.md
+  [ "$status" -eq 0 ]
+  [ "$output" = 'hello <!-- o!print -n "X" --> world' ]
+}
+
 @test "dispatch consumes a standalone Markdown directive line" {
   cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
 before

@@ -7,7 +7,7 @@
 Turn comments into explicit, user-triggered commands.
 
 ![shape: mise + BATS](https://img.shields.io/badge/shape-mise%20%2B%20BATS-4EAA25?style=flat&logo=gnubash&logoColor=white)
-[![tests: 96](https://img.shields.io/badge/tests-96-brightgreen?style=flat)](test/)
+[![tests: 98](https://img.shields.io/badge/tests-98-brightgreen?style=flat)](test/)
 ![lints: 9](https://img.shields.io/badge/lints-9-blue?style=flat)
 ![README: TSX](https://img.shields.io/badge/README-TSX-f472b6?style=flat)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat)](LICENSE)
@@ -97,6 +97,8 @@ $rows | length
 -->
 ```
 
+In Markdown, directives must use standalone HTML block comments. Inline HTML comments such as `hello <!-- o!script --> world` are not supported yet; see [comments#3](https://github.com/KnickKnackLabs/comments/issues/3).
+
 Dispatch every directive in a file:
 
 ```bash
@@ -125,7 +127,7 @@ comments dispatch --atomic notes.md
 
 ## Supported files
 
-The v1 supported extension set is intentionally explicit: `.md`, `.js`, `.jsx`, `.ts`, `.tsx`, `.rs`, `.go`, `.sh`, and `.py`. Unsupported extensions fail clearly instead of being treated as files with no directives.
+The v1 supported extension set is intentionally explicit: `.md`, `.js`, `.jsx`, `.ts`, `.tsx`, `.rs`, `.go`, `.sh`, and `.py`. Unsupported extensions fail clearly instead of being treated as files with no directives. Markdown support is currently limited to standalone HTML block comments, not inline HTML comments.
 
 ## Context
 
@@ -185,7 +187,7 @@ readme build --check
 git diff --check
 ```
 
-The starter suite currently has **96 tests** and **3 public tasks**. Those numbers are read from the repo at README build time.
+The starter suite currently has **98 tests** and **3 public tasks**. Those numbers are read from the repo at README build time.
 
 <div align="center">
 
