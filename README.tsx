@@ -400,7 +400,9 @@ comments context directive --json # directive record`}</CodeBlock>
     <Section title="Integrations">
       <Paragraph>
         <Code>comments integrations zed</Code>
-        {" installs Zed task wiring in the caller directory so Zed can save the current file and run "}
+        {" delegates to "}
+        <Code>ctl zed tasks upsert</Code>
+        {" to install Zed task wiring in the caller directory so Zed can save the current file and run "}
         <Code>{`comments dispatch "$ZED_FILE"`}</Code>
         {" from the task palette."}
       </Paragraph>

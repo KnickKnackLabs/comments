@@ -13,6 +13,7 @@ jq = "1.8.1"
 ast-grep = "0.43.0"
 "aqua:nushell/nushell" = "0.113.1"
 "shiv:codebase" = "0.3"
+"shiv:ctl" = "0.1"
 "shiv:readme" = "0.3"
 
 [_.codebase]

@@ -162,7 +162,7 @@ comments context directive --json # directive record
 
 ## Integrations
 
-`comments integrations zed` installs Zed task wiring in the caller directory so Zed can save the current file and run `comments dispatch "$ZED_FILE"` from the task palette.
+`comments integrations zed` delegates to `ctl zed tasks upsert` to install Zed task wiring in the caller directory so Zed can save the current file and run `comments dispatch "$ZED_FILE"` from the task palette.
 
 ```bash
 comments integrations zed
