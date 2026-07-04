@@ -94,14 +94,15 @@ sender="${COMMENT_CHAT_AS:-${CHAT_IDENTITY:-$(whoami)}}"
 When dispatch runs, the directive is consumed and the chat message includes the
 source file and line.
 
-For Zed, run `comments` through the project mise environment so helper tools
-come from `mise.toml`:
+For Zed, the plain `comments` task is enough. The directive itself runs from
+the target file's directory, so `mise comment` resolves against the project:
 
 ```json
 [
   {
     "label": "comments: dispatch current file",
-    "command": "mise exec -- comments dispatch \"$ZED_FILE\"",
+    "command": "comments",
+    "args": ["dispatch", "$ZED_FILE"],
     "save": "current",
     "hide": "on_success"
   }
