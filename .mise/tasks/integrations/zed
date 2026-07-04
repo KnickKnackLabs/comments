@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+#MISE description="Install Zed task wiring for dispatching the current file"
+#MISE dir="{{config_root}}"
+#USAGE flag "--stdout" default=#false help="Print the Zed task snippet instead of writing .zed/tasks.json"
+#USAGE example "mise run integrations:zed" header="Install Zed task wiring in the caller directory"
+#USAGE example "mise run integrations:zed --stdout" header="Print Zed task wiring"
+set -euo pipefail
+
+TASK_JSON="$(cat <<'JSON'
+{
+  "label": "comments: dispatch current file",
+  "command": "comments",
+  "args": ["dispatch", "$ZED_FILE"],
+  "save": "current",
+  "hide": "on_success"
+}
+JSON
+)"
+
+print_snippet() {
+  jq -n --argjson task "$TASK_JSON" '[$task]'
+}
+
+if [ "${usage_stdout}" = "true" ]; then
+  print_snippet
+  exit 0
+fi
+
+base="${COMMENTS_CALLER_PWD:-$PWD}"
+zed_dir="$base/.zed"
+tasks_file="$zed_dir/tasks.json"
+mkdir -p "$zed_dir"
+
+tmp="$(mktemp)"
+trap 'rm -f "$tmp"' EXIT
+
+if [ -e "$tasks_file" ]; then
+  if ! jq -e 'type == "array"' "$tasks_file" >/dev/null; then
+    echo "comments integrations zed: $tasks_file must be a JSON array" >&2
+    exit 1
+  fi
+
+  jq --argjson task "$TASK_JSON" '
+    if any(.[]?; .label == $task.label) then
+      map(if .label == $task.label then $task else . end)
+    else
+      . + [$task]
+    end
+  ' "$tasks_file" > "$tmp"
+else
+  print_snippet > "$tmp"
+fi
+
+mv "$tmp" "$tasks_file"
+trap - EXIT
+printf 'comments integrations zed: wrote %s\n' "$tasks_file"

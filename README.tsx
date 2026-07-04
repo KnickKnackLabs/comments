@@ -397,6 +397,18 @@ comments context line            # 1-based directive line
 comments context directive --json # directive record`}</CodeBlock>
     </Section>
 
+    <Section title="Integrations">
+      <Paragraph>
+        <Code>comments integrations zed</Code>
+        {" installs Zed task wiring in the caller directory so Zed can save the current file and run "}
+        <Code>{`comments dispatch "$ZED_FILE"`}</Code>
+        {" from the task palette."}
+      </Paragraph>
+
+      <CodeBlock lang="bash">{`comments integrations zed
+comments integrations zed --stdout  # print instead of writing .zed/tasks.json`}</CodeBlock>
+    </Section>
+
     <Section title="Examples">
       <List>
         <Item><Code>examples/basic.md</Code> shows consume-only directives, output replacement, and multiline directive form.</Item>
