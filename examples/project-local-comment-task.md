@@ -76,8 +76,8 @@ location="$(
     | jq -r '.file as $file | (.directive.range.start.line + 1) as $line | "\($file):\($line)"'
 )"
 
-channel="${COMMENT_CHAT_CHANNEL:-ikma}"
-sender="${COMMENT_CHAT_AS:-${CHAT_IDENTITY:-or}}"
+channel="${COMMENT_CHAT_CHANNEL:-default}"
+sender="${COMMENT_CHAT_AS:-${CHAT_IDENTITY:-$(whoami)}}"
 
 {
   printf 'From %s\n\n' "$location"
