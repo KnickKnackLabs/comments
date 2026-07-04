@@ -60,7 +60,7 @@ codebase pre-commit
 | Real test path    | BATS tests call tasks through `mise run`, not raw scripts.                                               | `test/test_helper.bash`      |
 | Mac + Linux CI    | Bash and tooling differences show up before merge.                                                       | ubuntu-latest + macos-latest |
 
-## Scaffold inventory
+## Project inventory
 
 | Path                         | Status | Purpose                                     |
 | ---------------------------- | ------ | ------------------------------------------- |

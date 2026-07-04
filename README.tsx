@@ -128,7 +128,7 @@ const testCount = countBatsTests();
 const lints = configuredLints();
 const oses = workflowOses();
 
-const scaffold = [
+const inventory = [
   ["mise.toml", "tools, settings, and codebase lint config"],
   ["README.tsx", "programmable README source"],
   ["CONTRIBUTING.md", "repo-entry orientation surface"],
@@ -243,14 +243,14 @@ codebase pre-commit`}</CodeBlock>
       </Table>
     </Section>
 
-    <Section title="Scaffold inventory">
+    <Section title="Project inventory">
       <Table>
         <TableHead>
           <Cell>Path</Cell>
           <Cell>Status</Cell>
           <Cell>Purpose</Cell>
         </TableHead>
-        {scaffold.map(([path, purpose]) => (
+        {inventory.map(([path, purpose]) => (
           <TableRow>
             <Cell><Code>{path}</Code></Cell>
             <Cell>{status(path)}</Cell>
