@@ -11,7 +11,7 @@ recipe instead of a live directive in this file.
 ````md
 <!--
 !
-let message = $"From ($context.file):($context.directive.range.start.line + 1)
+let message = $"From (comments context)
 
 What do you think about this paragraph?"
 $message | chat send --chat fold --as ikma --force -

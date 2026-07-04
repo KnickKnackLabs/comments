@@ -382,6 +382,19 @@ $context.directive.range       # ast-grep byte/line range
 $context.directive.text        # original comment text
 $context.directive.body        # normalized comment body
 $context.directive.script      # script being executed`}</CodeBlock>
+
+      <Paragraph>
+        <Code>comments context</Code>
+        {" exposes that same dispatch context to nested commands without coupling "}
+        <Code>comments</Code>
+        {" to any one consumer such as chat. It only works while a directive is being dispatched."}
+      </Paragraph>
+
+      <CodeBlock lang="bash">{`comments context                 # file:line
+comments context --json          # full context JSON
+comments context file            # absolute file path
+comments context line            # 1-based directive line
+comments context directive --json # directive record`}</CodeBlock>
     </Section>
 
     <Section title="Examples">
