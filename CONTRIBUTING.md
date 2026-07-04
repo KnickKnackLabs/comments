@@ -35,9 +35,11 @@ comments/
 ├── README.tsx             # Source for generated README.md
 ├── README.md              # Generated; keep in sync with README.tsx
 ├── CONTRIBUTING.md        # Repo orientation surface
+├── .mise/tasks/context    # Print directive context during dispatch
+├── .mise/tasks/dispatch   # Execute directives and write/print transformations
 ├── .mise/tasks/test       # Canonical BATS runner
 ├── .mise/tasks/doctor     # Local health checks + optional hook status
-├── lib/                   # Shared runtime code starts here when needed
+├── lib/comments/          # Shared Nu helper modules
 └── test/                  # BATS tests and helpers
 ```
 

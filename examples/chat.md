@@ -14,9 +14,11 @@ recipe instead of a live directive in this file.
 let message = $"From (comments context)
 
 What do you think about this paragraph?"
-$message | chat send --chat fold --as ikma --force -
+$message | chat send --chat my-channel --as my-name --force -
 -->
 ````
+
+Replace `my-channel` and `my-name` with the chat channel and identity for your workflow.
 
 After dispatch, the directive comment is consumed. The reply path is whatever
 workflow the chat participants agree on; for agents working in the same checkout,
