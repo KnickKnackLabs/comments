@@ -397,15 +397,17 @@ comments context directive --json # public directive record`}</CodeBlock>
         <Code>comments integrations zed</Code>
         {" delegates to "}
         <Code>ctl zed tasks upsert</Code>
-        {" to install Zed task wiring in the caller directory, then uses "}
+        {" to install Zed task wiring in the caller directory. With "}
+        <Code>--keymap</Code>
+        {", it also uses "}
         <Code>ctl zed keymap</Code>
         {" to bind keys for spawning and rerunning the task. Zed can save the current file and run "}
         <Code>{`comments dispatch "$ZED_FILE"`}</Code>
         {" from the task palette or keymap."}
       </Paragraph>
 
-      <CodeBlock lang="bash">{`comments integrations zed
-comments integrations zed --skip-keymap       # install only .zed/tasks.json
+      <CodeBlock lang="bash">{`comments integrations zed                     # install only .zed/tasks.json
+comments integrations zed --keymap            # also install global keybindings
 comments integrations zed --keymap-force      # replace conflicting keymap bindings
 comments integrations zed --stdout            # print task JSON instead of writing`}</CodeBlock>
 
@@ -431,6 +433,7 @@ comments integrations zed --stdout            # print task JSON instead of writi
         <Item><Code>examples/basic.md</Code> shows consume-only directives, output replacement, and multiline directive form.</Item>
         <Item><Code>examples/context.md</Code> shows a live directive using <Code>comments context --json</Code> to format its own dispatch context.</Item>
         <Item><Code>examples/chat.md</Code> is a recipe for sending a file-local note through the <Code>chat</Code> CLI; it is not a live directive because <Code>chat send</Code> has side effects.</Item>
+        <Item><Code>examples/project-local-comment-task.md</Code> shows how a project can support the short review-comment form <Code>{`<!-- ! "message" | mise comment -->`}</Code>.</Item>
       </List>
     </Section>
 

@@ -157,11 +157,11 @@ comments context directive --json # public directive record
 
 ## Integrations
 
-`comments integrations zed` delegates to `ctl zed tasks upsert` to install Zed task wiring in the caller directory, then uses `ctl zed keymap` to bind keys for spawning and rerunning the task. Zed can save the current file and run `comments dispatch "$ZED_FILE"` from the task palette or keymap.
+`comments integrations zed` delegates to `ctl zed tasks upsert` to install Zed task wiring in the caller directory. With `--keymap`, it also uses `ctl zed keymap` to bind keys for spawning and rerunning the task. Zed can save the current file and run `comments dispatch "$ZED_FILE"` from the task palette or keymap.
 
 ```bash
-comments integrations zed
-comments integrations zed --skip-keymap       # install only .zed/tasks.json
+comments integrations zed                     # install only .zed/tasks.json
+comments integrations zed --keymap            # also install global keybindings
 comments integrations zed --keymap-force      # replace conflicting keymap bindings
 comments integrations zed --stdout            # print task JSON instead of writing
 ```
@@ -173,6 +173,7 @@ Default keybindings are `cmd-shift-d` / `cmd-shift-r` on macOS, or `ctrl-shift-d
 - `examples/basic.md` shows consume-only directives, output replacement, and multiline directive form.
 - `examples/context.md` shows a live directive using `comments context --json` to format its own dispatch context.
 - `examples/chat.md` is a recipe for sending a file-local note through the `chat` CLI; it is not a live directive because `chat send` has side effects.
+- `examples/project-local-comment-task.md` shows how a project can support the short review-comment form `<!-- ! "message" | mise comment -->`.
 
 ## Design notes
 
