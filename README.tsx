@@ -373,14 +373,9 @@ $rows | length
       </Paragraph>
 
       <CodeBlock lang="nu">{`$context.file                  # absolute target file path
-$context.target_dir            # parent directory of the target file
-$context.caller_pwd            # COMMENTS_CALLER_PWD, or the dispatch cwd fallback
-$context.lines                 # original file lines
 $context.directive.flags       # flag string, e.g. "o"
 $context.directive.flag_list   # flag list, e.g. ["o"]
 $context.directive.range       # ast-grep byte/line range
-$context.directive.text        # original comment text
-$context.directive.body        # normalized comment body
 $context.directive.script      # script being executed`}</CodeBlock>
 
       <Paragraph>
@@ -391,10 +386,10 @@ $context.directive.script      # script being executed`}</CodeBlock>
       </Paragraph>
 
       <CodeBlock lang="bash">{`comments context                 # file:line
-comments context --json          # full context JSON
+comments context --json          # public context JSON
 comments context file            # absolute file path
 comments context line            # 1-based directive line
-comments context directive --json # directive record`}</CodeBlock>
+comments context directive --json # public directive record`}</CodeBlock>
     </Section>
 
     <Section title="Integrations">
@@ -402,18 +397,39 @@ comments context directive --json # directive record`}</CodeBlock>
         <Code>comments integrations zed</Code>
         {" delegates to "}
         <Code>ctl zed tasks upsert</Code>
-        {" to install Zed task wiring in the caller directory so Zed can save the current file and run "}
+        {" to install Zed task wiring in the caller directory, then uses "}
+        <Code>ctl zed keymap</Code>
+        {" to bind keys for spawning and rerunning the task. Zed can save the current file and run "}
         <Code>{`comments dispatch "$ZED_FILE"`}</Code>
-        {" from the task palette."}
+        {" from the task palette or keymap."}
       </Paragraph>
 
       <CodeBlock lang="bash">{`comments integrations zed
-comments integrations zed --stdout  # print instead of writing .zed/tasks.json`}</CodeBlock>
+comments integrations zed --skip-keymap       # install only .zed/tasks.json
+comments integrations zed --keymap-force      # replace conflicting keymap bindings
+comments integrations zed --stdout            # print task JSON instead of writing`}</CodeBlock>
+
+      <Paragraph>
+        {"Default keybindings are "}
+        <Code>cmd-shift-d</Code>
+        {" / "}
+        <Code>cmd-shift-r</Code>
+        {" on macOS, or "}
+        <Code>ctrl-shift-d</Code>
+        {" / "}
+        <Code>ctrl-shift-r</Code>
+        {" elsewhere. The first spawns "}
+        <Code>comments: dispatch current file</Code>
+        {"; the second reruns the last task with fresh Zed context. Existing different bindings are not clobbered unless "}
+        <Code>--keymap-force</Code>
+        {" is passed."}
+      </Paragraph>
     </Section>
 
     <Section title="Examples">
       <List>
         <Item><Code>examples/basic.md</Code> shows consume-only directives, output replacement, and multiline directive form.</Item>
+        <Item><Code>examples/context.md</Code> shows a live directive using <Code>comments context --json</Code> to format its own dispatch context.</Item>
         <Item><Code>examples/chat.md</Code> is a recipe for sending a file-local note through the <Code>chat</Code> CLI; it is not a live directive because <Code>chat send</Code> has side effects.</Item>
       </List>
     </Section>

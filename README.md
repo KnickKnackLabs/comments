@@ -7,7 +7,7 @@
 Turn comments into explicit, user-triggered commands.
 
 ![shape: mise + BATS](https://img.shields.io/badge/shape-mise%20%2B%20BATS-4EAA25?style=flat&logo=gnubash&logoColor=white)
-[![tests: 120](https://img.shields.io/badge/tests-120-brightgreen?style=flat)](test/)
+[![tests: 123](https://img.shields.io/badge/tests-123-brightgreen?style=flat)](test/)
 ![lints: 9](https://img.shields.io/badge/lints-9-blue?style=flat)
 ![README: TSX](https://img.shields.io/badge/README-TSX-f472b6?style=flat)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat)](LICENSE)
@@ -75,13 +75,13 @@ codebase pre-commit
 
 ## Tasks
 
-| Task                        | Description                                              |
-| --------------------------- | -------------------------------------------------------- |
-| `mise run context`          | Print current directive context                          |
-| `mise run dispatch`         | Dispatch comment directives in a file                    |
-| `mise run doctor`           | Check local development setup                            |
-| `mise run integrations:zed` | Install Zed task wiring for dispatching the current file |
-| `mise run test`             | Run BATS tests                                           |
+| Task                        | Description                                                     |
+| --------------------------- | --------------------------------------------------------------- |
+| `mise run context`          | Print current directive context                                 |
+| `mise run dispatch`         | Dispatch comment directives in a file                           |
+| `mise run doctor`           | Check local development setup                                   |
+| `mise run integrations:zed` | Install Zed task/keymap wiring for dispatching the current file |
+| `mise run test`             | Run BATS tests                                                  |
 
 ## Usage
 
@@ -139,14 +139,9 @@ Each directive script receives a structured `$context` record:
 
 ```nu
 $context.file                  # absolute target file path
-$context.target_dir            # parent directory of the target file
-$context.caller_pwd            # COMMENTS_CALLER_PWD, or the dispatch cwd fallback
-$context.lines                 # original file lines
 $context.directive.flags       # flag string, e.g. "o"
 $context.directive.flag_list   # flag list, e.g. ["o"]
 $context.directive.range       # ast-grep byte/line range
-$context.directive.text        # original comment text
-$context.directive.body        # normalized comment body
 $context.directive.script      # script being executed
 ```
 
@@ -154,24 +149,29 @@ $context.directive.script      # script being executed
 
 ```bash
 comments context                 # file:line
-comments context --json          # full context JSON
+comments context --json          # public context JSON
 comments context file            # absolute file path
 comments context line            # 1-based directive line
-comments context directive --json # directive record
+comments context directive --json # public directive record
 ```
 
 ## Integrations
 
-`comments integrations zed` delegates to `ctl zed tasks upsert` to install Zed task wiring in the caller directory so Zed can save the current file and run `comments dispatch "$ZED_FILE"` from the task palette.
+`comments integrations zed` delegates to `ctl zed tasks upsert` to install Zed task wiring in the caller directory, then uses `ctl zed keymap` to bind keys for spawning and rerunning the task. Zed can save the current file and run `comments dispatch "$ZED_FILE"` from the task palette or keymap.
 
 ```bash
 comments integrations zed
-comments integrations zed --stdout  # print instead of writing .zed/tasks.json
+comments integrations zed --skip-keymap       # install only .zed/tasks.json
+comments integrations zed --keymap-force      # replace conflicting keymap bindings
+comments integrations zed --stdout            # print task JSON instead of writing
 ```
+
+Default keybindings are `cmd-shift-d` / `cmd-shift-r` on macOS, or `ctrl-shift-d` / `ctrl-shift-r` elsewhere. The first spawns `comments: dispatch current file`; the second reruns the last task with fresh Zed context. Existing different bindings are not clobbered unless `--keymap-force` is passed.
 
 ## Examples
 
 - `examples/basic.md` shows consume-only directives, output replacement, and multiline directive form.
+- `examples/context.md` shows a live directive using `comments context --json` to format its own dispatch context.
 - `examples/chat.md` is a recipe for sending a file-local note through the `chat` CLI; it is not a live directive because `chat send` has side effects.
 
 ## Design notes
@@ -210,7 +210,7 @@ readme build --check
 git diff --check
 ```
 
-The suite currently has **120 tests** and **5 public tasks**. Those numbers are read from the repo at README build time.
+The suite currently has **123 tests** and **5 public tasks**. Those numbers are read from the repo at README build time.
 
 <div align="center">
 

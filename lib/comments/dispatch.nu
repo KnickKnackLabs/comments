@@ -1,12 +1,18 @@
 # Directive dispatch helpers shared by comments tasks.
 
+export def public-directive-context [directive: record] {
+  {
+    range: $directive.range,
+    flags: $directive.flags,
+    flag_list: $directive.flag_list,
+    script: $directive.script,
+  }
+}
+
 export def context-for-directive [target: string, content: string, caller_pwd: string, directive: record] {
   {
     file: $target,
-    target_dir: ($target | path dirname),
-    caller_pwd: $caller_pwd,
-    lines: ($content | lines),
-    directive: $directive,
+    directive: (public-directive-context $directive),
   }
 }
 
@@ -30,7 +36,7 @@ export def run-directive [context: record] {
   let source = "let context = ($env.COMMENTS_CONTEXT_JSON | from json)\n" + $context.directive.script
 
   with-env {COMMENTS_CONTEXT_JSON: ($context | to json -r)} {
-    cd $context.target_dir
+    cd ($context.file | path dirname)
     ^nu -c $source | complete
   }
 }

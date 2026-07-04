@@ -1,7 +1,7 @@
 #!/usr/bin/env nu
 #MISE description="Print current directive context"
 #MISE dir="{{config_root}}"
-#USAGE arg "[field]" default="" help="Context field: location, file, line, column, target-dir, caller-pwd, directive, text, body, or script"
+#USAGE arg "[field]" default="" help="Context field: location, file, line, column, directive, or script"
 #USAGE flag "--json" default=#false help="Emit JSON"
 #USAGE example "mise run context" header="Print the current directive location"
 #USAGE example "mise run context directive --json" header="Print the current directive record as JSON"

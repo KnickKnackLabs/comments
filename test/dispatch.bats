@@ -117,17 +117,17 @@ EOF
   [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "middle" ]
 }
 
-@test "dispatch provides context to directive scripts" {
+@test "dispatch provides minimal context to directive scripts" {
   cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
 # Title
 
-<!-- o!$"file=($context.file | path basename) line=($context.directive.range.start.line) lines=($context.lines | length)" -->
+<!-- o!$"file=($context.file | path basename) line=($context.directive.range.start.line) script=($context.directive.script | str substring 0..<5)" -->
 EOF
 
   COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch sample.md
   [ "$status" -eq 0 ]
   [ -z "$output" ]
-  expected=$'# Title\n\nfile=sample.md line=2 lines=3'
+  expected=$'# Title\n\nfile=sample.md line=2 script=$"fil'
   [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "$expected" ]
 }
 
@@ -154,17 +154,6 @@ EOF
   [ "$(cat "$BATS_TEST_TMPDIR/sub/sample.md")" = "neighbor text" ]
 }
 
-@test "dispatch exposes target_dir and caller_pwd in context" {
-  mkdir -p "$BATS_TEST_TMPDIR/sub"
-  caller_base="$(basename "$BATS_TEST_TMPDIR")"
-  cat > "$BATS_TEST_TMPDIR/sub/sample.md" <<'EOF'
-<!-- o!$"target=($context.target_dir | path basename) caller=($context.caller_pwd | path basename)" -->
-EOF
-
-  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch sub/sample.md
-  [ "$status" -eq 0 ]
-  [ "$(cat "$BATS_TEST_TMPDIR/sub/sample.md")" = "target=sub caller=$caller_base" ]
-}
 
 @test "dispatch supports multiline directive scripts" {
   cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'

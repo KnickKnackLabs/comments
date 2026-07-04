@@ -37,7 +37,7 @@ comments/
 ├── CONTRIBUTING.md        # Repo orientation surface
 ├── .mise/tasks/context    # Print directive context during dispatch
 ├── .mise/tasks/dispatch   # Execute directives and write/print transformations
-├── .mise/tasks/integrations/zed # Install/print Zed task wiring via ctl
+├── .mise/tasks/integrations/zed # Install/print Zed task/keymap wiring via ctl
 ├── .mise/tasks/test       # Canonical BATS runner
 ├── .mise/tasks/doctor     # Local health checks + optional hook status
 ├── lib/comments/          # Shared Nu helper modules

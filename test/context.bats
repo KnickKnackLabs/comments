@@ -5,23 +5,14 @@ load test_helper
 sample_context_json() {
   jq -n \
     --arg file "$BATS_TEST_TMPDIR/sample.md" \
-    --arg target_dir "$BATS_TEST_TMPDIR" \
-    --arg caller_pwd "$BATS_TEST_TMPDIR/caller" \
     '{
       file: $file,
-      target_dir: $target_dir,
-      caller_pwd: $caller_pwd,
-      lines: ["before", "<!-- o!script -->", "after"],
       directive: {
-        file: $file,
-        kind: "html_block",
         range: {
           start: {line: 1, column: 0},
           end: {line: 1, column: 17},
           byteOffset: {start: 7, end: 24}
         },
-        text: "<!-- o!script -->",
-        body: "o!script",
         flags: "o",
         flag_list: ["o"],
         script: "script"
@@ -41,11 +32,11 @@ sample_context_json() {
   [ "$output" = "$BATS_TEST_TMPDIR/sample.md:2" ]
 }
 
-@test "context --json prints full context" {
+@test "context --json prints public context" {
   COMMENTS_CONTEXT_JSON="$(sample_context_json)" run comments context --json
   [ "$status" -eq 0 ]
   [ "$(printf '%s\n' "$output" | jq -r '.file')" = "$BATS_TEST_TMPDIR/sample.md" ]
-  [ "$(printf '%s\n' "$output" | jq -r '.directive.body')" = "o!script" ]
+  [ "$(printf '%s\n' "$output" | jq -r '.directive.script')" = "script" ]
 }
 
 @test "context prints selected scalar fields" {
@@ -57,15 +48,15 @@ sample_context_json() {
   [ "$status" -eq 0 ]
   [ "$output" = "2" ]
 
-  COMMENTS_CONTEXT_JSON="$(sample_context_json)" run comments context body
+  COMMENTS_CONTEXT_JSON="$(sample_context_json)" run comments context script
   [ "$status" -eq 0 ]
-  [ "$output" = "o!script" ]
+  [ "$output" = "script" ]
 }
 
-@test "context directive --json prints directive record" {
+@test "context directive --json prints public directive record" {
   COMMENTS_CONTEXT_JSON="$(sample_context_json)" run comments context directive --json
   [ "$status" -eq 0 ]
-  [ "$(printf '%s\n' "$output" | jq -r '.text')" = "<!-- o!script -->" ]
+  [ "$(printf '%s\n' "$output" | jq -r '.script')" = "script" ]
   [ "$(printf '%s\n' "$output" | jq -r '.range.start.line')" = "1" ]
 }
 

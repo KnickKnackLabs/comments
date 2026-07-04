@@ -14,15 +14,53 @@ load test_helper
   [ "$(printf '%s\n' "$output" | jq -r '.[0].hide')" = "on_success" ]
 }
 
-@test "integrations:zed creates .zed/tasks.json in the caller directory" {
-  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments integrations:zed
+@test "integrations:zed creates only .zed/tasks.json by default" {
+  ZED_CONFIG_HOME="$BATS_TEST_TMPDIR/zed-config" COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments integrations:zed
   [ "$status" -eq 0 ]
   [[ "$output" == *".zed/tasks.json"* ]]
+  [[ "$output" != *"keymap.json"* ]]
 
   tasks="$BATS_TEST_TMPDIR/.zed/tasks.json"
   [ -f "$tasks" ]
   [ "$(jq -r '.[0].label' "$tasks")" = "comments: dispatch current file" ]
   [ "$(jq -r '.[0].args[1]' "$tasks")" = '$ZED_FILE' ]
+  [ ! -e "$BATS_TEST_TMPDIR/zed-config/keymap.json" ]
+}
+
+@test "integrations:zed --keymap creates task and keymap wiring" {
+  ZED_CONFIG_HOME="$BATS_TEST_TMPDIR/zed-config" COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments integrations:zed --keymap
+  [ "$status" -eq 0 ]
+  [[ "$output" == *".zed/tasks.json"* ]]
+  [[ "$output" == *"keymap.json"* ]]
+
+  keymap="$BATS_TEST_TMPDIR/zed-config/keymap.json"
+  case "$(uname -s)" in
+    Darwin)
+      spawn_key="cmd-shift-d"
+      rerun_key="cmd-shift-r"
+      ;;
+    *)
+      spawn_key="ctrl-shift-d"
+      rerun_key="ctrl-shift-r"
+      ;;
+  esac
+
+  [ "$(jq -r --arg key "$spawn_key" '.[0].bindings[$key][0]' "$keymap")" = "task::Spawn" ]
+  [ "$(jq -r --arg key "$spawn_key" '.[0].bindings[$key][1].task_name' "$keymap")" = "comments: dispatch current file" ]
+  [ "$(jq -r --arg key "$rerun_key" '.[0].bindings[$key][0]' "$keymap")" = "task::Rerun" ]
+  [ "$(jq -r --arg key "$rerun_key" '.[0].bindings[$key][1].reevaluate_context' "$keymap")" = "true" ]
+}
+
+@test "integrations:zed --keymap supports custom keybindings" {
+  ZED_CONFIG_HOME="$BATS_TEST_TMPDIR/zed-config" COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments integrations:zed \
+    --keymap \
+    --keystroke alt-d \
+    --rerun-keystroke alt-r
+  [ "$status" -eq 0 ]
+
+  keymap="$BATS_TEST_TMPDIR/zed-config/keymap.json"
+  [ "$(jq -r '.[0].bindings["alt-d"][0]' "$keymap")" = "task::Spawn" ]
+  [ "$(jq -r '.[0].bindings["alt-r"][0]' "$keymap")" = "task::Rerun" ]
 }
 
 @test "integrations:zed appends to existing Zed tasks" {
@@ -37,7 +75,7 @@ load test_helper
 ]
 JSON
 
-  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments integrations:zed
+  ZED_CONFIG_HOME="$BATS_TEST_TMPDIR/zed-config" COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments integrations:zed
   [ "$status" -eq 0 ]
 
   tasks="$BATS_TEST_TMPDIR/.zed/tasks.json"
@@ -58,7 +96,7 @@ JSON
 ]
 JSON
 
-  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments integrations:zed
+  ZED_CONFIG_HOME="$BATS_TEST_TMPDIR/zed-config" COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments integrations:zed
   [ "$status" -eq 0 ]
 
   tasks="$BATS_TEST_TMPDIR/.zed/tasks.json"
@@ -71,8 +109,51 @@ JSON
   mkdir -p "$BATS_TEST_TMPDIR/.zed"
   printf '{"label":"not an array"}\n' > "$BATS_TEST_TMPDIR/.zed/tasks.json"
 
-  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments integrations:zed
+  ZED_CONFIG_HOME="$BATS_TEST_TMPDIR/zed-config" COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments integrations:zed --keymap
   [ "$status" -ne 0 ]
   [[ "$output" == *"must be a JSON array"* ]]
   [ "$(cat "$BATS_TEST_TMPDIR/.zed/tasks.json")" = '{"label":"not an array"}' ]
+  [ ! -e "$BATS_TEST_TMPDIR/zed-config/keymap.json" ]
+}
+
+@test "integrations:zed --keymap fails without clobbering conflicting keymap binding" {
+  mkdir -p "$BATS_TEST_TMPDIR/zed-config"
+  cat > "$BATS_TEST_TMPDIR/zed-config/keymap.json" <<'JSON'
+[
+  {
+    "context": "Workspace",
+    "bindings": {
+      "cmd-shift-d": "workspace::Open"
+    }
+  }
+]
+JSON
+
+  ZED_CONFIG_HOME="$BATS_TEST_TMPDIR/zed-config" COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments integrations:zed --keymap
+  if [ "$(uname -s)" = "Darwin" ]; then
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"already exists with a different value"* ]]
+    [ "$(jq -r '.[0].bindings["cmd-shift-d"]' "$BATS_TEST_TMPDIR/zed-config/keymap.json")" = "workspace::Open" ]
+    [ ! -e "$BATS_TEST_TMPDIR/.zed/tasks.json" ]
+  else
+    [ "$status" -eq 0 ]
+  fi
+}
+
+@test "integrations:zed --keymap-force replaces conflicting keymap binding" {
+  mkdir -p "$BATS_TEST_TMPDIR/zed-config"
+  cat > "$BATS_TEST_TMPDIR/zed-config/keymap.json" <<'JSON'
+[
+  {
+    "context": "Workspace",
+    "bindings": {
+      "cmd-shift-d": "workspace::Open"
+    }
+  }
+]
+JSON
+
+  ZED_CONFIG_HOME="$BATS_TEST_TMPDIR/zed-config" COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments integrations:zed --keymap-force
+  [ "$status" -eq 0 ]
+  [ "$(jq -r '.[0].bindings["cmd-shift-d"][0]' "$BATS_TEST_TMPDIR/zed-config/keymap.json")" = "task::Spawn" ]
 }

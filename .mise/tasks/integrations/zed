@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
-#MISE description="Install Zed task wiring for dispatching the current file"
+#MISE description="Install Zed task/keymap wiring for dispatching the current file"
 #MISE dir="{{config_root}}"
 #USAGE flag "--stdout" default=#false help="Print the Zed task snippet instead of writing .zed/tasks.json"
-#USAGE example "mise run integrations:zed" header="Install Zed task wiring in the caller directory"
+#USAGE flag "--keymap" default=#false help="Also install global Zed keybindings"
+#USAGE flag "--keymap-force" default=#false help="Replace conflicting Zed keymap bindings; implies --keymap"
+#USAGE flag "--keystroke <keystroke>" default="" help="Keybinding for spawning the comments dispatch task (default: cmd-shift-d on macOS, ctrl-shift-d elsewhere)"
+#USAGE flag "--rerun-keystroke <rerun_keystroke>" default="" help="Keybinding for rerunning the last task with fresh Zed context (default: cmd-shift-r on macOS, ctrl-shift-r elsewhere)"
+#USAGE example "mise run integrations:zed" header="Install project-local Zed task wiring"
+#USAGE example "mise run integrations:zed --keymap" header="Also install global Zed keybindings"
 #USAGE example "mise run integrations:zed --stdout" header="Print Zed task wiring"
 set -euo pipefail
 
@@ -28,6 +33,43 @@ fi
 
 base="${COMMENTS_CALLER_PWD:-${MISE_ORIGINAL_CWD:-$PWD}}"
 zed_file_arg="\$ZED_FILE"
+install_keymap="${usage_keymap}"
+if [ "${usage_keymap_force}" = "true" ]; then
+  install_keymap=true
+fi
+
+default_keystroke() {
+  local suffix="$1"
+  case "$(uname -s)" in
+    Darwin) printf 'cmd-shift-%s\n' "$suffix" ;;
+    *) printf 'ctrl-shift-%s\n' "$suffix" ;;
+  esac
+}
+
+keystroke="${usage_keystroke:-}"
+if [ -z "$keystroke" ]; then
+  keystroke="$(default_keystroke d)"
+fi
+
+rerun_keystroke="${usage_rerun_keystroke:-}"
+if [ -z "$rerun_keystroke" ]; then
+  rerun_keystroke="$(default_keystroke r)"
+fi
+
+force_args=()
+if [ "${usage_keymap_force}" = "true" ]; then
+  force_args+=(--force)
+fi
+
+if [ "$install_keymap" = "true" ] && [ "${usage_keymap_force}" != "true" ]; then
+  ctl zed keymap check-task \
+    --keystroke "$keystroke" \
+    --task "comments: dispatch current file" >/dev/null
+
+  ctl zed keymap check-rerun \
+    --keystroke "$rerun_keystroke" \
+    --reevaluate-context >/dev/null
+fi
 
 (
   cd "$base"
@@ -39,3 +81,15 @@ zed_file_arg="\$ZED_FILE"
     --save current \
     --hide on_success
 )
+
+if [ "$install_keymap" = "true" ]; then
+  ctl zed keymap bind-task \
+    --keystroke "$keystroke" \
+    --task "comments: dispatch current file" \
+    ${force_args[@]+"${force_args[@]}"}
+
+  ctl zed keymap bind-rerun \
+    --keystroke "$rerun_keystroke" \
+    --reevaluate-context \
+    ${force_args[@]+"${force_args[@]}"}
+fi
