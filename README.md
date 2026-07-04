@@ -7,7 +7,7 @@
 Turn comments into explicit, user-triggered commands.
 
 ![shape: mise + BATS](https://img.shields.io/badge/shape-mise%20%2B%20BATS-4EAA25?style=flat&logo=gnubash&logoColor=white)
-[![tests: 108](https://img.shields.io/badge/tests-108-brightgreen?style=flat)](test/)
+[![tests: 115](https://img.shields.io/badge/tests-115-brightgreen?style=flat)](test/)
 ![lints: 9](https://img.shields.io/badge/lints-9-blue?style=flat)
 ![README: TSX](https://img.shields.io/badge/README-TSX-f472b6?style=flat)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat)](LICENSE)
@@ -77,6 +77,7 @@ codebase pre-commit
 
 | Task                | Description                           |
 | ------------------- | ------------------------------------- |
+| `mise run context`  | Print current directive context       |
 | `mise run dispatch` | Dispatch comment directives in a file |
 | `mise run doctor`   | Check local development setup         |
 | `mise run test`     | Run BATS tests                        |
@@ -148,6 +149,16 @@ $context.directive.body        # normalized comment body
 $context.directive.script      # script being executed
 ```
 
+`comments context` exposes that same dispatch context to nested commands without coupling `comments` to any one consumer such as chat. It only works while a directive is being dispatched.
+
+```bash
+comments context                 # file:line
+comments context --json          # full context JSON
+comments context file            # absolute file path
+comments context line            # 1-based directive line
+comments context directive --json # directive record
+```
+
 ## Examples
 
 - `examples/basic.md` shows consume-only directives, output replacement, and multiline directive form.
@@ -189,7 +200,7 @@ readme build --check
 git diff --check
 ```
 
-The starter suite currently has **108 tests** and **3 public tasks**. Those numbers are read from the repo at README build time.
+The starter suite currently has **115 tests** and **4 public tasks**. Those numbers are read from the repo at README build time.
 
 <div align="center">
 
