@@ -24,7 +24,7 @@ A directive is a comment body that starts with `<flags>!`. `comments` extracts t
 
 ## Install
 
-After this package is registered with [shiv](https://github.com/KnickKnackLabs/shiv), install it as:
+Install with [shiv](https://github.com/KnickKnackLabs/shiv):
 
 ```bash
 shiv install comments
@@ -175,7 +175,7 @@ comments context directive --json # directive record
 <details>
 <summary><b>Current convention checks</b></summary>
 
-This template currently asks [codebase](https://github.com/KnickKnackLabs/codebase) to run these lint rules:
+`comments` currently asks [codebase](https://github.com/KnickKnackLabs/codebase) to run these lint rules:
 
 ```
 mise-settings
@@ -200,7 +200,7 @@ readme build --check
 git diff --check
 ```
 
-The starter suite currently has **115 tests** and **4 public tasks**. Those numbers are read from the repo at README build time.
+The suite currently has **115 tests** and **4 public tasks**. Those numbers are read from the repo at README build time.
 
 <div align="center">
 

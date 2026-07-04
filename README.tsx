@@ -178,9 +178,9 @@ const readme = (
 
     <Section title="Install">
       <Paragraph>
-        {"After this package is registered with "}
+        {"Install with "}
         <Link href="https://github.com/KnickKnackLabs/shiv">shiv</Link>
-        {", install it as:"}
+        {":"}
       </Paragraph>
 
       <CodeBlock lang="bash">{`shiv install comments`}</CodeBlock>
@@ -416,7 +416,8 @@ comments context directive --json # directive record`}</CodeBlock>
 
     <Details summary="Current convention checks">
       <Paragraph>
-        {"This template currently asks "}
+        <Code>comments</Code>
+        {" currently asks "}
         <Link href="https://github.com/KnickKnackLabs/codebase">codebase</Link>
         {" to run these lint rules:"}
       </Paragraph>
@@ -430,7 +431,7 @@ readme build --check
 git diff --check`}</CodeBlock>
 
       <Paragraph>
-        {"The starter suite currently has "}
+        {"The suite currently has "}
         <Bold>{`${testCount} tests`}</Bold>
         {" and "}
         <Bold>{`${tasks.length} public tasks`}</Bold>
