@@ -297,6 +297,10 @@ $rows | length
 -->`}</CodeBlock>
 
       <Paragraph>
+        {"Directives execute code with the permissions of the dispatching user. Inspect the target file and dispatch only directives you trust; do not treat comment syntax as a security boundary."}
+      </Paragraph>
+
+      <Paragraph>
         {"In Markdown, directives must use standalone HTML block comments. Inline HTML comments such as "}
         <Code>{`hello <!-- o!script --> world`}</Code>
         {" are not supported yet; see "}
@@ -390,6 +394,14 @@ comments context --json          # public context JSON
 comments context file            # absolute file path
 comments context line            # 1-based directive line
 comments context directive --json # public directive record`}</CodeBlock>
+
+      <Paragraph>
+        {"During dispatch, nested processes also receive "}
+        <Code>COMMENTS_CONTEXT_JSON</Code>
+        {" with the same public JSON shape. Latency-sensitive project helpers may read that dispatch-only environment value directly instead of launching another "}
+        <Code>comments context</Code>
+        {" process. It is absent outside directive execution."}
+      </Paragraph>
     </Section>
 
     <Section title="Integrations">
@@ -409,7 +421,20 @@ comments context directive --json # public directive record`}</CodeBlock>
       <CodeBlock lang="bash">{`comments integrations zed                     # install only .zed/tasks.json
 comments integrations zed --keymap            # also install global keybindings
 comments integrations zed --keymap-force      # replace conflicting keymap bindings
-comments integrations zed --stdout            # print task JSON instead of writing`}</CodeBlock>
+comments integrations zed --stdout            # print task JSON instead of writing
+
+# Optional project-specific task ergonomics.
+comments integrations zed \\
+  --reveal never \\
+  --shell-program /bin/zsh \\
+  --shell-arg=-f \\
+  --env COMMENT_CHAT_AS=or`}</CodeBlock>
+
+      <Paragraph>
+        {"Reveal, shell, and task environment settings are opt-in. Hiding task UI can conceal failures, shell paths are machine-specific, and sender identity belongs to the project or user boundary rather than "}
+        <Code>comments</Code>
+        {" core."}
+      </Paragraph>
 
       <Paragraph>
         {"Default keybindings are "}
@@ -425,6 +450,18 @@ comments integrations zed --stdout            # print task JSON instead of writi
         {"; the second reruns the last task with fresh Zed context. Existing different bindings are not clobbered unless "}
         <Code>--keymap-force</Code>
         {" is passed."}
+      </Paragraph>
+
+      <Paragraph>
+        {"Inline snippet text and its recipient also remain project policy. After installing a compatible "}
+        <Code>ctl</Code>
+        {", projects may use "}
+        <Code>ctl zed keymap check-snippet</Code>
+        {" and "}
+        <Code>bind-snippet</Code>
+        {" to bind an "}
+        <Code>editor::InsertSnippet</Code>
+        {" action without teaching generic comments core about a chat room, agent, or directive body."}
       </Paragraph>
     </Section>
 
