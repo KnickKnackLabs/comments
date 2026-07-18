@@ -66,6 +66,20 @@ sample_context_json() {
   [[ "$output" == *"unknown context field: nope"* ]]
 }
 
+@test "dispatch exposes stable context JSON to nested commands" {
+  cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
+<!--
+o!
+let ctx = ($env.COMMENTS_CONTEXT_JSON | from json)
+$"file=($ctx.file | path basename) line=($ctx.directive.range.start.line + 1)"
+-->
+EOF
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch sample.md
+  [ "$status" -eq 0 ]
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "file=sample.md line=1" ]
+}
+
 @test "dispatch snippets can call comments context through PATH" {
   cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
 before

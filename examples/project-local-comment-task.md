@@ -1,27 +1,29 @@
 # Project-local comment task example
 
 `comments` stays generic: it finds directives, exposes context, runs scripts,
-and edits files. A project can add a tiny local helper for its own review or
+and edits files. A project can add a small local helper for its own review or
 chat workflow.
 
-This example shows how to support the short directive form:
+This example supports the short directive form:
 
 ```md
 <!-- ! "This section is unclear." | mise comment -->
 ```
 
-The trick is a mise namespace default task: `.mise/tasks/comment/_default`.
-`mise run` is optional, so `mise comment` works.
+Directives execute code. Inspect the file and dispatch only directives you
+trust. Do not run whole-file dispatch against an untrusted checkout merely
+because the comments look like prose.
 
 ## Project setup
 
-Declare the tools the directive and helper need:
+Declare every tool used by the directive and helper:
 
 ```toml
 # mise.toml
 [tools]
 "shiv:comments" = "0.2"
-"shiv:chat" = "0.1"
+"shiv:chat" = "0.2"
+jq = "1"
 
 [settings]
 quiet = true
@@ -30,9 +32,9 @@ task_output = "interleave"
 
 ## Default task
 
-Keep the default task tiny and delegate to a concrete helper. This lets users
-write `mise comment` in directives while the implementation can live at a more
-specific task such as `comment:chat`.
+Use a mise namespace default task so `mise comment` works. Execute the concrete
+helper directly instead of starting a second mise process. The parent task has
+already parsed and exported `usage_message`.
 
 ```bash
 #!/usr/bin/env bash
@@ -41,17 +43,14 @@ specific task such as `comment:chat`.
 #USAGE arg "[message]" default="" help="Message to send; reads stdin when omitted"
 set -euo pipefail
 
-if [ -n "${usage_message:-}" ]; then
-  exec mise run -q comment:chat "$usage_message"
-else
-  exec mise run -q comment:chat
-fi
+exec "$MISE_CONFIG_ROOT/.mise/tasks/comment/chat"
 ```
 
 ## Chat helper
 
-This helper reads a message from its argument or stdin, asks `comments context`
-where the directive lives, then sends a formatted note to chat.
+During dispatch, `COMMENTS_CONTEXT_JSON` contains the same public JSON record
+returned by `comments context --json`. Reading it directly avoids launching a
+second `comments` process on latency-sensitive editor paths.
 
 ```bash
 #!/usr/bin/env bash
@@ -70,20 +69,37 @@ if [ -z "${message//[[:space:]]/}" ]; then
   exit 1
 fi
 
-context_json="$(comments context --json)"
-location="$(
+context_json="${COMMENTS_CONTEXT_JSON:-}"
+if [ -z "${context_json//[[:space:]]/}" ]; then
+  echo "comment:chat: COMMENTS_CONTEXT_JSON is required; run through comments dispatch" >&2
+  exit 1
+fi
+
+if ! location="$(
   printf '%s' "$context_json" \
-    | jq -r '.file as $file | (.directive.range.start.line + 1) as $line | "\($file):\($line)"'
-)"
+    | jq -er '
+        select((.file | type) == "string")
+        | select((.directive.range.start.line | type) == "number")
+        | "\(.file):\(.directive.range.start.line + 1)"
+      ' 2>/dev/null
+)"; then
+  echo "comment:chat: COMMENTS_CONTEXT_JSON is invalid or missing file/line context" >&2
+  exit 1
+fi
 
 channel="${COMMENT_CHAT_CHANNEL:-default}"
 sender="${COMMENT_CHAT_AS:-${CHAT_IDENTITY:-$(whoami)}}"
+chat_bin="${CHAT:-chat}"
 
 {
   printf 'From %s\n\n' "$location"
   printf '%s\n' "$message"
-} | chat send --chat "$channel" --as "$sender" --force -
+} | "$chat_bin" send --chat "$channel" --as "$sender" --force
 ```
+
+A human-authored editor comment can inherit an unrelated ambient
+`CHAT_IDENTITY`. Set `COMMENT_CHAT_AS` explicitly in the project task when
+attribution matters.
 
 ## Use from a directive
 
@@ -91,20 +107,47 @@ sender="${COMMENT_CHAT_AS:-${CHAT_IDENTITY:-$(whoami)}}"
 <!-- ! "Can you look at this paragraph?" | mise comment -->
 ```
 
-When dispatch runs, the directive is consumed and the chat message includes the
-source file and line.
+A successful consume-only directive is removed after its chat message sends.
+The message includes the source file and line.
 
-For Zed, the plain `comments` task is enough. The directive itself runs from
-the target file's directory, so `mise comment` resolves against the project:
+## Zed task ergonomics
 
-```json
-[
-  {
-    "label": "comments: dispatch current file",
-    "command": "comments",
-    "args": ["dispatch", "$ZED_FILE"],
-    "save": "current",
-    "hide": "on_success"
-  }
-]
+The minimal integration remains portable:
+
+```bash
+comments integrations zed --keymap
 ```
+
+A project can opt into proven local ergonomics without making them generic
+defaults:
+
+```bash
+comments integrations zed \
+  --keymap \
+  --reveal never \
+  --shell-program /bin/zsh \
+  --shell-arg=-f \
+  --env COMMENT_CHAT_AS=or
+```
+
+`--reveal never` hides the task terminal, `/bin/zsh -f` is a local macOS shell
+choice, and the environment entry makes the human sender explicit. Choose
+values appropriate to the project and machine.
+
+Snippet text and recipients remain project policy. Install an inline Markdown
+snippet through `ctl` when useful:
+
+```bash
+ctl zed keymap check-snippet \
+  --context 'Editor && extension == md' \
+  --keystroke 'cmd-k i' \
+  --snippet '<!-- ! "@ikma ${1:feedback}" | mise comment -->$0'
+
+ctl zed keymap bind-snippet \
+  --context 'Editor && extension == md' \
+  --keystroke 'cmd-k i' \
+  --snippet '<!-- ! "@ikma ${1:feedback}" | mise comment -->$0'
+```
+
+This keeps `@ikma`, `mise comment`, chat identity, and shortcut choice outside
+`comments` core.

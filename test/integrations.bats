@@ -28,6 +28,61 @@ zed_default_rerun_key() {
   [ "$(printf '%s\n' "$output" | jq -r '.[0].hide')" = "on_success" ]
 }
 
+@test "integrations:zed --stdout includes requested review task fields" {
+  run comments integrations:zed \
+    --stdout \
+    --reveal never \
+    --shell-program /bin/zsh \
+    --shell-arg=-f \
+    --env COMMENT_CHAT_AS=or \
+    --env 'REVIEW_LABEL=hello world'
+  [ "$status" -eq 0 ]
+
+  [ "$(printf '%s\n' "$output" | jq -r '.[0].reveal')" = "never" ]
+  [ "$(printf '%s\n' "$output" | jq -r '.[0].shell.with_arguments.program')" = "/bin/zsh" ]
+  [ "$(printf '%s\n' "$output" | jq -r '.[0].shell.with_arguments.args[0]')" = "-f" ]
+  [ "$(printf '%s\n' "$output" | jq -r '.[0].env.COMMENT_CHAT_AS')" = "or" ]
+  [ "$(printf '%s\n' "$output" | jq -r '.[0].env.REVIEW_LABEL')" = "hello world" ]
+}
+
+@test "integrations:zed installs and replaces requested review task fields" {
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments integrations:zed \
+    --reveal never \
+    --shell-program /bin/zsh \
+    --shell-arg=-f \
+    --env COMMENT_CHAT_AS=or
+  [ "$status" -eq 0 ]
+
+  tasks="$BATS_TEST_TMPDIR/.zed/tasks.json"
+  [ "$(jq 'length' "$tasks")" = "1" ]
+  [ "$(jq -r '.[0].reveal' "$tasks")" = "never" ]
+  [ "$(jq -r '.[0].shell.with_arguments.program' "$tasks")" = "/bin/zsh" ]
+  [ "$(jq -r '.[0].shell.with_arguments.args[0]' "$tasks")" = "-f" ]
+  [ "$(jq -r '.[0].env.COMMENT_CHAT_AS' "$tasks")" = "or" ]
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments integrations:zed --reveal no_focus
+  [ "$status" -eq 0 ]
+  [ "$(jq 'length' "$tasks")" = "1" ]
+  [ "$(jq -r '.[0].reveal' "$tasks")" = "no_focus" ]
+  [ "$(jq -r '.[0] | has("shell")' "$tasks")" = "false" ]
+  [ "$(jq -r '.[0] | has("env")' "$tasks")" = "false" ]
+}
+
+@test "integrations:zed validates review task fields before any writes" {
+  ZED_CONFIG_HOME="$BATS_TEST_TMPDIR/zed-config" COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments integrations:zed \
+    --keymap \
+    --reveal sometimes
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"invalid reveal value: sometimes"* ]]
+  [ ! -e "$BATS_TEST_TMPDIR/.zed/tasks.json" ]
+  [ ! -e "$BATS_TEST_TMPDIR/zed-config/keymap.json" ]
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments integrations:zed --shell-arg=-f
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"--shell-arg requires --shell-program"* ]]
+  [ ! -e "$BATS_TEST_TMPDIR/.zed/tasks.json" ]
+}
+
 @test "integrations:zed creates only .zed/tasks.json by default" {
   ZED_CONFIG_HOME="$BATS_TEST_TMPDIR/zed-config" COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments integrations:zed
   [ "$status" -eq 0 ]

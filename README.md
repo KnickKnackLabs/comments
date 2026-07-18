@@ -7,7 +7,7 @@
 Turn comments into explicit, user-triggered commands.
 
 ![shape: mise + BATS](https://img.shields.io/badge/shape-mise%20%2B%20BATS-4EAA25?style=flat&logo=gnubash&logoColor=white)
-[![tests: 123](https://img.shields.io/badge/tests-123-brightgreen?style=flat)](test/)
+[![tests: 127](https://img.shields.io/badge/tests-127-brightgreen?style=flat)](test/)
 ![lints: 9](https://img.shields.io/badge/lints-9-blue?style=flat)
 ![README: TSX](https://img.shields.io/badge/README-TSX-f472b6?style=flat)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat)](LICENSE)
@@ -99,6 +99,8 @@ $rows | length
 -->
 ```
 
+Directives execute code with the permissions of the dispatching user. Inspect the target file and dispatch only directives you trust; do not treat comment syntax as a security boundary.
+
 In Markdown, directives must use standalone HTML block comments. Inline HTML comments such as `hello <!-- o!script --> world` are not supported yet; see [comments#3](https://github.com/KnickKnackLabs/comments/issues/3).
 
 In JSX/TSX, directive comments inside expression braces must be the only content in that expression. `{/* o!script */}` is supported and the full expression wrapper is consumed/replaced; `{/* o!script */ value}` fails before execution.
@@ -155,6 +157,8 @@ comments context line            # 1-based directive line
 comments context directive --json # public directive record
 ```
 
+During dispatch, nested processes also receive `COMMENTS_CONTEXT_JSON` with the same public JSON shape. Latency-sensitive project helpers may read that dispatch-only environment value directly instead of launching another `comments context` process. It is absent outside directive execution.
+
 ## Integrations
 
 `comments integrations zed` delegates to `ctl zed tasks upsert` to install Zed task wiring in the caller directory. With `--keymap`, it also uses `ctl zed keymap` to bind keys for spawning and rerunning the task. Zed can save the current file and run `comments dispatch "$ZED_FILE"` from the task palette or keymap.
@@ -164,9 +168,20 @@ comments integrations zed                     # install only .zed/tasks.json
 comments integrations zed --keymap            # also install global keybindings
 comments integrations zed --keymap-force      # replace conflicting keymap bindings
 comments integrations zed --stdout            # print task JSON instead of writing
+
+# Optional project-specific task ergonomics.
+comments integrations zed \
+  --reveal never \
+  --shell-program /bin/zsh \
+  --shell-arg=-f \
+  --env COMMENT_CHAT_AS=or
 ```
 
+Reveal, shell, and task environment settings are opt-in. Hiding task UI can conceal failures, shell paths are machine-specific, and sender identity belongs to the project or user boundary rather than `comments` core.
+
 Default keybindings are `cmd-shift-d` / `cmd-shift-r` on macOS, or `ctrl-shift-d` / `ctrl-shift-r` elsewhere. The first spawns `comments: dispatch current file`; the second reruns the last task with fresh Zed context. Existing different bindings are not clobbered unless `--keymap-force` is passed.
+
+Inline snippet text and its recipient also remain project policy. After installing a compatible `ctl`, projects may use `ctl zed keymap check-snippet` and `bind-snippet` to bind an `editor::InsertSnippet` action without teaching generic comments core about a chat room, agent, or directive body.
 
 ## Examples
 
@@ -211,7 +226,7 @@ readme build --check
 git diff --check
 ```
 
-The suite currently has **123 tests** and **5 public tasks**. Those numbers are read from the repo at README build time.
+The suite currently has **127 tests** and **5 public tasks**. Those numbers are read from the repo at README build time.
 
 <div align="center">
 

@@ -2,35 +2,21 @@
 #MISE description="Install Zed task/keymap wiring for dispatching the current file"
 #MISE dir="{{config_root}}"
 #USAGE flag "--stdout" default=#false help="Print the Zed task snippet instead of writing .zed/tasks.json"
-#USAGE flag "--keymap" default=#false help="Also install global Zed keybindings"
-#USAGE flag "--keymap-force" default=#false help="Replace conflicting Zed keymap bindings; implies --keymap"
-#USAGE flag "--keystroke <keystroke>" default="" help="Keybinding for spawning the comments dispatch task (default: cmd-shift-d on macOS, ctrl-shift-d elsewhere)"
+#USAGE flag "--keymap" default=#false help="Also install global keybindings"
+#USAGE flag "--keymap-force" default=#false help="Replace conflicting keymap bindings; implies --keymap"
+#USAGE flag "--keystroke <keystroke>" default="" help="Keybinding for spawning the comments task (default: cmd-shift-d on macOS, ctrl-shift-d elsewhere)"
 #USAGE flag "--rerun-keystroke <rerun_keystroke>" default="" help="Keybinding for rerunning the last task with fresh Zed context (default: cmd-shift-r on macOS, ctrl-shift-r elsewhere)"
+#USAGE flag "--reveal <reveal>" default="" help="Optional Zed reveal policy: always, no_focus, or never"
+#USAGE flag "--shell-program <shell_program>" default="" help="Optional explicit Zed task shell program"
+#USAGE flag "--shell-arg <shell_arg>" default="" var=#true help="Shell argument passed through to ctl (repeatable; requires --shell-program)"
+#USAGE flag "--env <env>" default="" var=#true help="Task environment entry passed through as name=value (repeatable)"
 #USAGE example "mise run integrations:zed" header="Install project-local Zed task wiring"
-#USAGE example "mise run integrations:zed --keymap" header="Also install global Zed keybindings"
+#USAGE example "mise run integrations:zed --keymap" header="Also install global keybindings"
+#USAGE example "mise run integrations:zed --reveal never --shell-program /bin/zsh --shell-arg=-f --env COMMENT_CHAT_AS=or" header="Install reviewed local task ergonomics"
 #USAGE example "mise run integrations:zed --stdout" header="Print Zed task wiring"
 set -euo pipefail
 
-TASK_JSON="$(cat <<'JSON'
-{
-  "label": "comments: dispatch current file",
-  "command": "comments",
-  "args": ["dispatch", "$ZED_FILE"],
-  "save": "current",
-  "hide": "on_success"
-}
-JSON
-)"
-
-print_snippet() {
-  jq -n --argjson task "$TASK_JSON" '[$task]'
-}
-
-if [ "${usage_stdout}" = "true" ]; then
-  print_snippet
-  exit 0
-fi
-
+ctl_bin="${CTL:-ctl}"
 base="${COMMENTS_CALLER_PWD:-${MISE_ORIGINAL_CWD:-$PWD}}"
 zed_file_arg="\$ZED_FILE"
 install_keymap="${usage_keymap}"
@@ -46,6 +32,12 @@ default_keystroke() {
   esac
 }
 
+usage_values() {
+  local raw="$1"
+  [ -n "$raw" ] || return 0
+  printf '%s' "$raw" | xargs printf '%s\n'
+}
+
 keystroke="${usage_keystroke:-}"
 if [ -z "$keystroke" ]; then
   keystroke="$(default_keystroke d)"
@@ -56,39 +48,76 @@ if [ -z "$rerun_keystroke" ]; then
   rerun_keystroke="$(default_keystroke r)"
 fi
 
+task_args=(
+  zed tasks upsert
+  --label "comments: dispatch current file"
+  --command comments
+  --arg dispatch
+  --arg "$zed_file_arg"
+  --save current
+  --hide on_success
+)
+
+if [ -n "${usage_reveal:-}" ]; then
+  task_args+=(--reveal "$usage_reveal")
+fi
+if [ -n "${usage_shell_program:-}" ]; then
+  task_args+=(--shell-program "$usage_shell_program")
+fi
+while IFS= read -r value; do
+  [ -n "$value" ] || continue
+  task_args+=("--shell-arg=$value")
+done < <(usage_values "${usage_shell_arg:-}")
+while IFS= read -r value; do
+  [ -n "$value" ] || continue
+  task_args+=(--env "$value")
+done < <(usage_values "${usage_env:-}")
+
+render_dir="$(mktemp -d "${TMPDIR:-/tmp}/comments-zed-render.XXXXXX")"
+cleanup() {
+  rm -rf "$render_dir"
+}
+trap cleanup EXIT
+
+# Render through ctl first so every requested task field is validated before
+# this command mutates the caller's task or keymap files.
+(
+  cd "$render_dir"
+  "$ctl_bin" "${task_args[@]}" >/dev/null
+)
+
+if [ "${usage_stdout}" = "true" ]; then
+  cat "$render_dir/.zed/tasks.json"
+  exit 0
+fi
+
 force_args=()
 if [ "${usage_keymap_force}" = "true" ]; then
   force_args+=(--force)
 fi
 
 if [ "$install_keymap" = "true" ] && [ "${usage_keymap_force}" != "true" ]; then
-  ctl zed keymap check-task \
+  "$ctl_bin" zed keymap check-task \
     --keystroke "$keystroke" \
     --task "comments: dispatch current file" >/dev/null
 
-  ctl zed keymap check-rerun \
+  "$ctl_bin" zed keymap check-rerun \
     --keystroke "$rerun_keystroke" \
     --reevaluate-context >/dev/null
 fi
 
 (
   cd "$base"
-  ctl zed tasks upsert \
-    --label "comments: dispatch current file" \
-    --command comments \
-    --arg dispatch \
-    --arg "$zed_file_arg" \
-    --save current \
-    --hide on_success
+  "$ctl_bin" "${task_args[@]}"
 )
 
 if [ "$install_keymap" = "true" ]; then
-  ctl zed keymap bind-task \
+  "$ctl_bin" zed keymap bind-task \
     --keystroke "$keystroke" \
     --task "comments: dispatch current file" \
     ${force_args[@]+"${force_args[@]}"}
 
-  ctl zed keymap bind-rerun \
+  "$ctl_bin" zed keymap bind-rerun \
     --keystroke "$rerun_keystroke" \
     --reevaluate-context \
     ${force_args[@]+"${force_args[@]}"}

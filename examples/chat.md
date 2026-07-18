@@ -4,6 +4,9 @@ This is a recipe for using `comments` to send a note from a file to a chat
 channel. It assumes the `chat` CLI is available in the environment running
 `comments`.
 
+Directives execute code and `chat send` has external side effects. Inspect the
+file and dispatch only directives you trust.
+
 `--stdout` still executes directive scripts; it only controls whether the file
 is modified. Because `chat send` has side effects, this example is shown as a
 recipe instead of a live directive in this file.
@@ -14,7 +17,7 @@ recipe instead of a live directive in this file.
 let message = $"From (comments context)
 
 What do you think about this paragraph?"
-$message | chat send --chat my-channel --as my-name --force -
+$message | chat send --chat my-channel --as my-name --force
 -->
 ````
 
