@@ -28,6 +28,16 @@ zed_default_rerun_key() {
   [ "$(printf '%s\n' "$output" | jq -r '.[0].hide')" = "on_success" ]
 }
 
+@test "integrations:zed --cursor prints a location-aware task snippet" {
+  run comments integrations:zed --cursor --stdout
+  [ "$status" -eq 0 ]
+
+  [ "$(printf '%s\n' "$output" | jq -r '.[0].label')" = "comments: dispatch cursor directive" ]
+  [ "$(printf '%s\n' "$output" | jq -r '.[0].command')" = "comments" ]
+  [ "$(printf '%s\n' "$output" | jq -r '.[0].args | join("|")')" = 'dispatch|--at|$ZED_ROW:$ZED_COLUMN|$ZED_FILE' ]
+  [ "$(printf '%s\n' "$output" | jq -r '.[0].save')" = "current" ]
+}
+
 @test "integrations:zed --stdout includes requested review task fields" {
   run comments integrations:zed \
     --stdout \
@@ -122,6 +132,21 @@ zed_default_rerun_key() {
   keymap="$BATS_TEST_TMPDIR/zed-config/keymap.json"
   [ "$(jq -r '.[0].bindings["alt-d"][0]' "$keymap")" = "task::Spawn" ]
   [ "$(jq -r '.[0].bindings["alt-r"][0]' "$keymap")" = "task::Rerun" ]
+}
+
+@test "integrations:zed --cursor binds the cursor task label" {
+  ZED_CONFIG_HOME="$BATS_TEST_TMPDIR/zed-config" COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments integrations:zed \
+    --cursor \
+    --keymap \
+    --keystroke alt-d \
+    --rerun-keystroke alt-r
+  [ "$status" -eq 0 ]
+
+  tasks="$BATS_TEST_TMPDIR/.zed/tasks.json"
+  keymap="$BATS_TEST_TMPDIR/zed-config/keymap.json"
+  [ "$(jq -r '.[0].label' "$tasks")" = "comments: dispatch cursor directive" ]
+  [ "$(jq -r '.[0].args | join("|")' "$tasks")" = 'dispatch|--at|$ZED_ROW:$ZED_COLUMN|$ZED_FILE' ]
+  [ "$(jq -r '.[0].bindings["alt-d"][1].task_name' "$keymap")" = "comments: dispatch cursor directive" ]
 }
 
 @test "integrations:zed appends to existing Zed tasks" {

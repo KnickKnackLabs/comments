@@ -7,7 +7,7 @@
 Turn comments into explicit, user-triggered commands.
 
 ![shape: mise + BATS](https://img.shields.io/badge/shape-mise%20%2B%20BATS-4EAA25?style=flat&logo=gnubash&logoColor=white)
-[![tests: 127](https://img.shields.io/badge/tests-127-brightgreen?style=flat)](test/)
+[![tests: 140](https://img.shields.io/badge/tests-140-brightgreen?style=flat)](test/)
 ![lints: 9](https://img.shields.io/badge/lints-9-blue?style=flat)
 ![README: TSX](https://img.shields.io/badge/README-TSX-f472b6?style=flat)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat)](LICENSE)
@@ -75,13 +75,13 @@ codebase pre-commit
 
 ## Tasks
 
-| Task                        | Description                                                     |
-| --------------------------- | --------------------------------------------------------------- |
-| `mise run context`          | Print current directive context                                 |
-| `mise run dispatch`         | Dispatch comment directives in a file                           |
-| `mise run doctor`           | Check local development setup                                   |
-| `mise run integrations:zed` | Install Zed task/keymap wiring for dispatching the current file |
-| `mise run test`             | Run BATS tests                                                  |
+| Task                        | Description                                                                         |
+| --------------------------- | ----------------------------------------------------------------------------------- |
+| `mise run context`          | Print current directive context                                                     |
+| `mise run dispatch`         | Dispatch comment directives in a file                                               |
+| `mise run doctor`           | Check local development setup                                                       |
+| `mise run integrations:zed` | Install Zed task/keymap wiring for dispatching the current file or cursor directive |
+| `mise run test`             | Run BATS tests                                                                      |
 
 ## Usage
 
@@ -111,6 +111,14 @@ Dispatch every directive in a file:
 comments dispatch notes.md
 ```
 
+Dispatch only the directive containing a location:
+
+```bash
+comments dispatch --at 12:5 notes.md
+```
+
+`--at` uses one-based rows and UTF-8 byte columns, matching Zed's `ZED_ROW` and `ZED_COLUMN` task variables. The directive range includes its start and excludes its end. A missing or ambiguous match fails before any directive executes; Comments never falls back to a nearby directive.
+
 Execute directives and write the transformed file content to stdout instead of saving it to the target file:
 
 ```bash
@@ -128,6 +136,7 @@ comments dispatch --atomic notes.md
 - `o` is currently the only supported public flag; recognized but unsupported flags fail without consuming the directive.
 - Default dispatch is best-effort: failed directives remain unchanged, while successful directives are consumed/replaced.
 - `--atomic` applies no comment transformations if any directive fails or is unsupported.
+- `--at row:column` narrows execution to one containing directive without changing whole-file dispatch.
 - If a directive mutates the target file during normal dispatch, `comments` refuses to apply stale byte-range replacements.
 - `--stdout` executes directive scripts and emits the transformed file content to stdout instead of saving comment replacements to the target file.
 
@@ -161,10 +170,11 @@ During dispatch, nested processes also receive `COMMENTS_CONTEXT_JSON` with the 
 
 ## Integrations
 
-`comments integrations zed` delegates to `ctl zed tasks upsert` to install Zed task wiring in the caller directory. With `--keymap`, it also uses `ctl zed keymap` to bind keys for spawning and rerunning the task. Zed can save the current file and run `comments dispatch "$ZED_FILE"` from the task palette or keymap.
+`comments integrations zed` delegates to `ctl zed tasks upsert` to install Zed task wiring in the caller directory. With `--keymap`, it also uses `ctl zed keymap` to bind keys for spawning and rerunning the task. By default, Zed saves the current file and runs `comments dispatch "$ZED_FILE"` from the task palette or keymap. With `--cursor`, the installed task instead passes `--at "$ZED_ROW:$ZED_COLUMN"` and dispatches only the containing directive.
 
 ```bash
 comments integrations zed                     # install only .zed/tasks.json
+comments integrations zed --cursor            # install cursor-scoped dispatch
 comments integrations zed --keymap            # also install global keybindings
 comments integrations zed --keymap-force      # replace conflicting keymap bindings
 comments integrations zed --stdout            # print task JSON instead of writing
@@ -179,7 +189,7 @@ comments integrations zed \
 
 Reveal, shell, and task environment settings are opt-in. Hiding task UI can conceal failures, shell paths are machine-specific, and sender identity belongs to the project or user boundary rather than `comments` core.
 
-Default keybindings are `cmd-shift-d` / `cmd-shift-r` on macOS, or `ctrl-shift-d` / `ctrl-shift-r` elsewhere. The first spawns `comments: dispatch current file`; the second reruns the last task with fresh Zed context. Existing different bindings are not clobbered unless `--keymap-force` is passed.
+Default keybindings are `cmd-shift-d` / `cmd-shift-r` on macOS, or `ctrl-shift-d` / `ctrl-shift-r` elsewhere. The first spawns the installed whole-file or cursor task; the second reruns the last task with fresh Zed context. Existing different bindings are not clobbered unless `--keymap-force` is passed.
 
 Inline snippet text and its recipient also remain project policy. After installing a compatible `ctl`, projects may use `ctl zed keymap check-snippet` and `bind-snippet` to bind an `editor::InsertSnippet` action without teaching generic comments core about a chat room, agent, or directive body.
 
@@ -226,7 +236,7 @@ readme build --check
 git diff --check
 ```
 
-The suite currently has **127 tests** and **5 public tasks**. Those numbers are read from the repo at README build time.
+The suite currently has **140 tests** and **5 public tasks**. Those numbers are read from the repo at README build time.
 
 <div align="center">
 

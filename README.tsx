@@ -323,6 +323,21 @@ $rows | length
       <CodeBlock lang="bash">{`comments dispatch notes.md`}</CodeBlock>
 
       <Paragraph>
+        {"Dispatch only the directive containing a location:"}
+      </Paragraph>
+
+      <CodeBlock lang="bash">{`comments dispatch --at 12:5 notes.md`}</CodeBlock>
+
+      <Paragraph>
+        <Code>--at</Code>
+        {" uses one-based rows and UTF-8 byte columns, matching Zed's "}
+        <Code>ZED_ROW</Code>
+        {" and "}
+        <Code>ZED_COLUMN</Code>
+        {" task variables. The directive range includes its start and excludes its end. A missing or ambiguous match fails before any directive executes; Comments never falls back to a nearby directive."}
+      </Paragraph>
+
+      <Paragraph>
         {"Execute directives and write the transformed file content to stdout instead of saving it to the target file:"}
       </Paragraph>
 
@@ -340,6 +355,7 @@ $rows | length
         <Item><Code>o</Code> is currently the only supported public flag; recognized but unsupported flags fail without consuming the directive.</Item>
         <Item>Default dispatch is best-effort: failed directives remain unchanged, while successful directives are consumed/replaced.</Item>
         <Item><Code>--atomic</Code> applies no comment transformations if any directive fails or is unsupported.</Item>
+        <Item><Code>--at row:column</Code> narrows execution to one containing directive without changing whole-file dispatch.</Item>
         <Item>If a directive mutates the target file during normal dispatch, <Code>comments</Code> refuses to apply stale byte-range replacements.</Item>
         <Item><Code>--stdout</Code> executes directive scripts and emits the transformed file content to stdout instead of saving comment replacements to the target file.</Item>
       </List>
@@ -413,12 +429,17 @@ comments context directive --json # public directive record`}</CodeBlock>
         <Code>--keymap</Code>
         {", it also uses "}
         <Code>ctl zed keymap</Code>
-        {" to bind keys for spawning and rerunning the task. Zed can save the current file and run "}
+        {" to bind keys for spawning and rerunning the task. By default, Zed saves the current file and runs "}
         <Code>{`comments dispatch "$ZED_FILE"`}</Code>
-        {" from the task palette or keymap."}
+        {" from the task palette or keymap. With "}
+        <Code>--cursor</Code>
+        {", the installed task instead passes "}
+        <Code>{`--at "$ZED_ROW:$ZED_COLUMN"`}</Code>
+        {" and dispatches only the containing directive."}
       </Paragraph>
 
       <CodeBlock lang="bash">{`comments integrations zed                     # install only .zed/tasks.json
+comments integrations zed --cursor            # install cursor-scoped dispatch
 comments integrations zed --keymap            # also install global keybindings
 comments integrations zed --keymap-force      # replace conflicting keymap bindings
 comments integrations zed --stdout            # print task JSON instead of writing
@@ -445,9 +466,7 @@ comments integrations zed \\
         <Code>ctrl-shift-d</Code>
         {" / "}
         <Code>ctrl-shift-r</Code>
-        {" elsewhere. The first spawns "}
-        <Code>comments: dispatch current file</Code>
-        {"; the second reruns the last task with fresh Zed context. Existing different bindings are not clobbered unless "}
+        {" elsewhere. The first spawns the installed whole-file or cursor task; the second reruns the last task with fresh Zed context. Existing different bindings are not clobbered unless "}
         <Code>--keymap-force</Code>
         {" is passed."}
       </Paragraph>
