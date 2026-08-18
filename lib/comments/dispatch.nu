@@ -9,6 +9,41 @@ export def public-directive-context [directive: record] {
   }
 }
 
+export def parse-dispatch-position [value: string] {
+  let parsed = ($value | parse --regex '^(?<row>[1-9][0-9]*):(?<column>[1-9][0-9]*)$')
+  if (($parsed | length) != 1) {
+    return null
+  }
+
+  let position = ($parsed | first)
+  try {
+    {
+      line: (($position.row | into int) - 1),
+      column: (($position.column | into int) - 1),
+    }
+  } catch {
+    null
+  }
+}
+
+# ast-grep and tree-sitter ranges include the start point and exclude the end.
+def position-in-range [position: record, range: record] {
+  let after_start = (
+    ($position.line > $range.start.line)
+    or (($position.line == $range.start.line) and ($position.column >= $range.start.column))
+  )
+  let before_end = (
+    ($position.line < $range.end.line)
+    or (($position.line == $range.end.line) and ($position.column < $range.end.column))
+  )
+
+  $after_start and $before_end
+}
+
+export def directives-at-position [directives: list, position: record] {
+  $directives | where {|directive| position-in-range $position $directive.range }
+}
+
 export def context-for-directive [target: string, content: string, caller_pwd: string, directive: record] {
   {
     file: $target,

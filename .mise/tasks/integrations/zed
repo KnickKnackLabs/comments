@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-#MISE description="Install Zed task/keymap wiring for dispatching the current file"
+#MISE description="Install Zed task/keymap wiring for dispatching the current file or cursor directive"
 #MISE dir="{{config_root}}"
 #USAGE flag "--stdout" default=#false help="Print the Zed task snippet instead of writing .zed/tasks.json"
+#USAGE flag "--cursor" default=#false help="Dispatch only the directive containing Zed's current cursor"
 #USAGE flag "--keymap" default=#false help="Also install global keybindings"
 #USAGE flag "--keymap-force" default=#false help="Replace conflicting keymap bindings; implies --keymap"
 #USAGE flag "--keystroke <keystroke>" default="" help="Keybinding for spawning the comments task (default: cmd-shift-d on macOS, ctrl-shift-d elsewhere)"
@@ -11,6 +12,7 @@
 #USAGE flag "--shell-arg <shell_arg>" default="" var=#true help="Shell argument passed through to ctl (repeatable; requires --shell-program)"
 #USAGE flag "--env <env>" default="" var=#true help="Task environment entry passed through as name=value (repeatable)"
 #USAGE example "mise run integrations:zed" header="Install project-local Zed task wiring"
+#USAGE example "mise run integrations:zed --cursor" header="Install cursor-scoped Zed task wiring"
 #USAGE example "mise run integrations:zed --keymap" header="Also install global keybindings"
 #USAGE example "mise run integrations:zed --reveal never --shell-program /bin/zsh --shell-arg=-f --env COMMENT_CHAT_AS=or" header="Install reviewed local task ergonomics"
 #USAGE example "mise run integrations:zed --stdout" header="Print Zed task wiring"
@@ -19,7 +21,12 @@ set -euo pipefail
 ctl_bin="${CTL:-ctl}"
 base="${COMMENTS_CALLER_PWD:-${MISE_ORIGINAL_CWD:-$PWD}}"
 zed_file_arg="\$ZED_FILE"
+zed_position_arg="\$ZED_ROW:\$ZED_COLUMN"
 install_keymap="${usage_keymap}"
+task_label="comments: dispatch current file"
+if [ "${usage_cursor}" = "true" ]; then
+  task_label="comments: dispatch cursor directive"
+fi
 if [ "${usage_keymap_force}" = "true" ]; then
   install_keymap=true
 fi
@@ -50,9 +57,17 @@ fi
 
 task_args=(
   zed tasks upsert
-  --label "comments: dispatch current file"
+  --label "$task_label"
   --command comments
   --arg dispatch
+)
+if [ "${usage_cursor}" = "true" ]; then
+  task_args+=(
+    --arg=--at
+    --arg "$zed_position_arg"
+  )
+fi
+task_args+=(
   --arg "$zed_file_arg"
   --save current
   --hide on_success
@@ -99,7 +114,7 @@ fi
 if [ "$install_keymap" = "true" ] && [ "${usage_keymap_force}" != "true" ]; then
   "$ctl_bin" zed keymap check-task \
     --keystroke "$keystroke" \
-    --task "comments: dispatch current file" >/dev/null
+    --task "$task_label" >/dev/null
 
   "$ctl_bin" zed keymap check-rerun \
     --keystroke "$rerun_keystroke" \
@@ -114,7 +129,7 @@ fi
 if [ "$install_keymap" = "true" ]; then
   "$ctl_bin" zed keymap bind-task \
     --keystroke "$keystroke" \
-    --task "comments: dispatch current file" \
+    --task "$task_label" \
     ${force_args[@]+"${force_args[@]}"}
 
   "$ctl_bin" zed keymap bind-rerun \

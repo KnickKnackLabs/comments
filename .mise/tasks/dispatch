@@ -3,17 +3,30 @@
 #MISE dir="{{config_root}}"
 #USAGE flag "--stdout" default=#false help="Execute directives and emit transformed file content to stdout instead of saving replacements"
 #USAGE flag "--atomic" default=#false help="Apply no comment transformations if any directive fails or is unsupported"
+#USAGE flag "--at <at>" help="Dispatch only the directive containing this one-based row:column byte position"
 #USAGE arg "file" help="File whose directives should be dispatched"
 #USAGE example "mise run dispatch README.md" header="Dispatch directives in a file"
+#USAGE example "mise run dispatch --at 12:5 README.md" header="Dispatch the directive at a location"
 #USAGE example "mise run dispatch --stdout README.md" header="Emit transformed file content to stdout"
 
 use ../../lib/comments/extract.nu [extract-comments is-supported-target resolve-target supported-extension-message]
 use ../../lib/comments/directives.nu directive-from-comment
-use ../../lib/comments/dispatch.nu [apply-replacements-to-content context-for-directive directive-writes-output duplicate-flags replacement-for-directive run-directive unsupported-flags unsupported-jsx-expression-comment]
+use ../../lib/comments/dispatch.nu [apply-replacements-to-content context-for-directive directives-at-position directive-writes-output duplicate-flags parse-dispatch-position replacement-for-directive run-directive unsupported-flags unsupported-jsx-expression-comment]
 
 let file = $env.usage_file
 let stdout = ($env.usage_stdout == "true")
 let atomic = ($env.usage_atomic == "true")
+let at_requested = ("usage_at" in $env)
+let at = ($env.usage_at? | default "" | str trim)
+let position = if $at_requested {
+  parse-dispatch-position $at
+} else {
+  null
+}
+if ($at_requested and ($position == null)) {
+  print -e $"comments dispatch: invalid --at position: ($at); expected one-based row:column"
+  exit 1
+}
 let base = ($env.COMMENTS_CALLER_PWD? | default $env.PWD)
 let target = (resolve-target $file $base)
 
@@ -34,11 +47,25 @@ let directives = (
   | each {|comment| directive-from-comment $comment }
   | where {|directive| $directive != null }
 )
+let selected_directives = if ($position == null) {
+  $directives
+} else {
+  let matches = (directives-at-position $directives $position)
+  if (($matches | length) == 0) {
+    print -e $"comments dispatch: no directive at ($at)"
+    exit 1
+  }
+  if (($matches | length) > 1) {
+    print -e $"comments dispatch: ambiguous directive selection at ($at)"
+    exit 1
+  }
+  $matches
+}
 
 mut replacements = []
 mut failures = []
 
-for directive in $directives {
+for directive in $selected_directives {
   let duplicates = (duplicate-flags $directive)
   if (($duplicates | length) > 0) {
     $failures = ($failures | append {

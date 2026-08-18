@@ -50,6 +50,85 @@ EOF
   [ "$output" = 'hello <!-- o!print -n "X" --> world' ]
 }
 
+@test "dispatch --at executes only the directive containing the one-based position" {
+  cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
+<!-- o!print -n "FIRST" -->
+<!-- o!print -n "SECOND" -->
+EOF
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch --at 1:5 sample.md
+  [ "$status" -eq 0 ]
+  expected='FIRST<!-- o!print -n "SECOND" -->'
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "$expected" ]
+}
+
+@test "dispatch --at selects a multiline directive from an interior row" {
+  cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
+<!--
+o!print -n "picked"
+-->
+<!-- o!print -n "other" -->
+EOF
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch --at 2:1 sample.md
+  [ "$status" -eq 0 ]
+  expected='picked<!-- o!print -n "other" -->'
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "$expected" ]
+}
+
+@test "dispatch --at composes with --stdout without saving the selected replacement" {
+  cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
+<!-- o!print -n "FIRST" -->
+<!-- o!print -n "SECOND" -->
+EOF
+  original="$(cat "$BATS_TEST_TMPDIR/sample.md")"
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch --stdout --at 2:5 sample.md
+  [ "$status" -eq 0 ]
+  expected=$'<!-- o!print -n "FIRST" -->\nSECOND'
+  [ "$output" = "$expected" ]
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "$original" ]
+}
+
+@test "dispatch --at uses one-based UTF-8 byte columns" {
+  cat > "$BATS_TEST_TMPDIR/sample.js" <<'EOF'
+const s = "é"; // o!print -n "X"
+EOF
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch --at 1:17 sample.js
+  [ "$status" -eq 0 ]
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.js")" = 'const s = "é"; X' ]
+}
+
+@test "dispatch --at fails on no match before any directive executes" {
+  cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
+before
+<!-- !"ran" | save --force marker.txt -->
+EOF
+  original="$(cat "$BATS_TEST_TMPDIR/sample.md")"
+
+  COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch --at 1:1 sample.md
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"no directive at 1:1"* ]]
+  [ ! -e "$BATS_TEST_TMPDIR/marker.txt" ]
+  [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "$original" ]
+}
+
+@test "dispatch --at rejects malformed positions before any directive executes" {
+  cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
+<!-- !"ran" | save --force marker.txt -->
+EOF
+  original="$(cat "$BATS_TEST_TMPDIR/sample.md")"
+
+  for position in 0:1 '' '   '; do
+    COMMENTS_CALLER_PWD="$BATS_TEST_TMPDIR" run comments dispatch --at "$position" sample.md
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"expected one-based row:column"* ]]
+    [ ! -e "$BATS_TEST_TMPDIR/marker.txt" ]
+    [ "$(cat "$BATS_TEST_TMPDIR/sample.md")" = "$original" ]
+  done
+}
+
 @test "dispatch consumes a standalone Markdown directive line" {
   cat > "$BATS_TEST_TMPDIR/sample.md" <<'EOF'
 before
