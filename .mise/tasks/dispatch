@@ -3,7 +3,7 @@
 #MISE dir="{{config_root}}"
 #USAGE flag "--stdout" default=#false help="Execute directives and emit transformed file content to stdout instead of saving replacements"
 #USAGE flag "--atomic" default=#false help="Apply no comment transformations if any directive fails or is unsupported"
-#USAGE flag "--at <at>" default="" help="Dispatch only the directive containing this one-based row:column byte position"
+#USAGE flag "--at <at>" help="Dispatch only the directive containing this one-based row:column byte position"
 #USAGE arg "file" help="File whose directives should be dispatched"
 #USAGE example "mise run dispatch README.md" header="Dispatch directives in a file"
 #USAGE example "mise run dispatch --at 12:5 README.md" header="Dispatch the directive at a location"
@@ -16,13 +16,14 @@ use ../../lib/comments/dispatch.nu [apply-replacements-to-content context-for-di
 let file = $env.usage_file
 let stdout = ($env.usage_stdout == "true")
 let atomic = ($env.usage_atomic == "true")
-let at = ($env.usage_at | str trim)
-let position = if ($at | is-empty) {
-  null
-} else {
+let at_requested = ("usage_at" in $env)
+let at = ($env.usage_at? | default "" | str trim)
+let position = if $at_requested {
   parse-dispatch-position $at
+} else {
+  null
 }
-if (($at | is-not-empty) and ($position == null)) {
+if ($at_requested and ($position == null)) {
   print -e $"comments dispatch: invalid --at position: ($at); expected one-based row:column"
   exit 1
 }
