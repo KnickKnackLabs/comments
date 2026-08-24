@@ -98,7 +98,7 @@ trap cleanup EXIT
 # this command mutates the caller's task or keymap files.
 (
   cd "$render_dir"
-  "$ctl_bin" "${task_args[@]}" >/dev/null
+  "$ctl_bin" ${task_args[@]+"${task_args[@]}"} >/dev/null
 )
 
 if [ "${usage_stdout}" = "true" ]; then
@@ -123,7 +123,7 @@ fi
 
 (
   cd "$base"
-  "$ctl_bin" "${task_args[@]}"
+  "$ctl_bin" ${task_args[@]+"${task_args[@]}"}
 )
 
 if [ "$install_keymap" = "true" ]; then
