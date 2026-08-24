@@ -218,6 +218,7 @@ cd comments
 mise trust
 mise install
 mise run test
+mise run test --jobs 1 # serial debugging
 mise run doctor
 
 # Run commands through mise while developing from the checkout.
@@ -539,7 +540,9 @@ readme build --check
 git diff --check`}</CodeBlock>
 
       <Paragraph>
-        {"The suite currently has "}
+        {"KKL BATS and Rush run four jobs across and within files by default. Use "}
+        <Code>mise run test --jobs 1</Code>
+        {" for serial debugging. The suite currently has "}
         <Bold>{`${testCount} tests`}</Bold>
         {" and "}
         <Bold>{`${tasks.length} public tasks`}</Bold>
