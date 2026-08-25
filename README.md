@@ -7,8 +7,8 @@
 Turn comments into explicit, user-triggered commands.
 
 ![shape: mise + BATS](https://img.shields.io/badge/shape-mise%20%2B%20BATS-4EAA25?style=flat&logo=gnubash&logoColor=white)
-[![tests: 140](https://img.shields.io/badge/tests-140-brightgreen?style=flat)](test/)
-![lints: 9](https://img.shields.io/badge/lints-9-blue?style=flat)
+[![tests: 148](https://img.shields.io/badge/tests-148-brightgreen?style=flat)](test/)
+![lints: 17](https://img.shields.io/badge/lints-17-blue?style=flat)
 ![README: TSX](https://img.shields.io/badge/README-TSX-f472b6?style=flat)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat)](LICENSE)
 
@@ -41,6 +41,7 @@ cd comments
 mise trust
 mise install
 mise run test
+mise run test --jobs 1 # serial debugging
 mise run doctor
 
 # Run commands through mise while developing from the checkout.
@@ -214,15 +215,23 @@ Inline snippet text and its recipient also remain project policy. After installi
 `comments` currently asks [codebase](https://github.com/KnickKnackLabs/codebase) to run these lint rules:
 
 ```
+shellcheck
+or-true
+bash-empty-argv-forwarding
+bash-empty-array-expansions
+exec-stderr-persistence
+gum-table
 mise-settings
+mise-usage-examples
+variadic-args
+mcr-scope
 bats-test-helper
 bats-test-task
-mcr-scope
-or-true
-shellcheck
-gum-table
-caller-pwd-contract
+bats-public-task-path
 github-actions
+ci-lint-enforcement
+caller-pwd-contract
+mise-shiv-plugin
 ```
 
 </details>
@@ -236,7 +245,7 @@ readme build --check
 git diff --check
 ```
 
-The suite currently has **140 tests** and **5 public tasks**. Those numbers are read from the repo at README build time.
+KKL BATS and Rush run four jobs across and within files by default. Use `mise run test --jobs 1` for serial debugging. The suite currently has **148 tests** and **5 public tasks**. Those numbers are read from the repo at README build time.
 
 <div align="center">
 

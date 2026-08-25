@@ -1,5 +1,6 @@
 /** @jsxImportSource jsx-md */
 
+import { execFileSync } from "child_process";
 import { existsSync, readFileSync, readdirSync, statSync } from "fs";
 import { join, resolve } from "path";
 
@@ -109,7 +110,25 @@ function configuredLints(): string[] {
   }
 
   const list = block.join("\n").match(/lint\s*=\s*\[([\s\S]*?)\]/)?.[1] ?? "";
-  return [...list.matchAll(/"([^"]+)"/g)].map((match) => match[1]);
+  const configured = [...list.matchAll(/"([^"]+)"/g)].map((match) => match[1]);
+  if (!configured.some((rule) => rule.startsWith("@"))) return configured;
+
+  const memberships = new Map<string, string[]>();
+  let currentGroup = "";
+  const groups = execFileSync("codebase", ["lint:groups"], {
+    cwd: REPO_DIR,
+    encoding: "utf8",
+  });
+  for (const line of groups.split("\n")) {
+    if (line.startsWith("@")) {
+      currentGroup = line;
+      memberships.set(currentGroup, []);
+    } else if (currentGroup && line.startsWith("  ")) {
+      memberships.get(currentGroup)!.push(line.trim());
+    }
+  }
+
+  return [...new Set(configured.flatMap((rule) => memberships.get(rule) ?? [rule]))];
 }
 
 function workflowOses(): string[] {
@@ -199,6 +218,7 @@ cd comments
 mise trust
 mise install
 mise run test
+mise run test --jobs 1 # serial debugging
 mise run doctor
 
 # Run commands through mise while developing from the checkout.
@@ -520,7 +540,9 @@ readme build --check
 git diff --check`}</CodeBlock>
 
       <Paragraph>
-        {"The suite currently has "}
+        {"KKL BATS and Rush run four jobs across and within files by default. Use "}
+        <Code>mise run test --jobs 1</Code>
+        {" for serial debugging. The suite currently has "}
         <Bold>{`${testCount} tests`}</Bold>
         {" and "}
         <Bold>{`${tasks.length} public tasks`}</Bold>
