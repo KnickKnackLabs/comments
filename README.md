@@ -7,7 +7,7 @@
 Turn comments into explicit, user-triggered commands.
 
 ![shape: mise + BATS](https://img.shields.io/badge/shape-mise%20%2B%20BATS-4EAA25?style=flat&logo=gnubash&logoColor=white)
-[![tests: 148](https://img.shields.io/badge/tests-148-brightgreen?style=flat)](test/)
+[![tests: 146](https://img.shields.io/badge/tests-146-brightgreen?style=flat)](test/)
 ![lints: 17](https://img.shields.io/badge/lints-17-blue?style=flat)
 ![README: TSX](https://img.shields.io/badge/README-TSX-f472b6?style=flat)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat)](LICENSE)
@@ -245,7 +245,7 @@ readme build --check
 git diff --check
 ```
 
-KKL BATS and Rush run four jobs across and within files by default. Use `mise run test --jobs 1` for serial debugging. The suite currently has **148 tests** and **5 public tasks**. Those numbers are read from the repo at README build time.
+KKL BATS and Rush run four jobs across and within files by default. Use `mise run test --jobs 1` for serial debugging. The suite currently has **146 tests** and **5 public tasks**. Those numbers are read from the repo at README build time.
 
 <div align="center">
 
